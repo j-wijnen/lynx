@@ -1,0 +1,6 @@
+Applications:
+    lynx:
+        app_types:
+            - LynxApp
+        content_directory: ${ROOT_DIR}/doc/content
+        log_default: WARNING
