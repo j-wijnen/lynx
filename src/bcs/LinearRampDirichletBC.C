@@ -2,6 +2,7 @@
 
 registerMooseObject("LynxApp", LinearRampDirichletBC);
 
+
 InputParameters
 LinearRampDirichletBC::validParams()
 {
@@ -16,7 +17,10 @@ LinearRampDirichletBC::validParams()
   return params;
 }
 
-LinearRampDirichletBC::LinearRampDirichletBC(const InputParameters & params)
+
+LinearRampDirichletBC::LinearRampDirichletBC(
+  const InputParameters & params
+)
   : NodalBC(params),
     _value(getParam<Real>("value")),
     _time(getParam<Real>("time")),
@@ -24,9 +28,15 @@ LinearRampDirichletBC::LinearRampDirichletBC(const InputParameters & params)
 {
 }
 
+
 Real
 LinearRampDirichletBC::computeQpResidual()
 {
+  // Apply value after time
+  if( _t >= _time )
+    return _u[_qp] - _value;
+
+  // Linear ramp to value
   Real up = (_t - _t_old) / (_time - _t_old) * (_value - _u_old[_qp]) + _u_old[_qp];
   return _u[_qp] - up;
 }

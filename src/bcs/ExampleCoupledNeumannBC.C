@@ -2,6 +2,7 @@
 
 registerMooseObject("LynxApp", ExampleCoupledNeumannBC);
 
+
 InputParameters
 ExampleCoupledNeumannBC::validParams()
 {
@@ -12,12 +13,16 @@ ExampleCoupledNeumannBC::validParams()
   return params;
 }
 
-ExampleCoupledNeumannBC::ExampleCoupledNeumannBC(const InputParameters & params)
+
+ExampleCoupledNeumannBC::ExampleCoupledNeumannBC(
+  const InputParameters & params
+)
   : IntegratedBC(params),
     _alpha(getParam<Real>("alpha")),
     _coupled_var(coupledValue("coupled_variable"))
 {
 }
+
 
 Real
 ExampleCoupledNeumannBC::computeQpResidual()

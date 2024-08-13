@@ -2,6 +2,7 @@
 
 registerMooseObject("LynxApp", ExampleCoupledDirichletBC);
 
+
 InputParameters
 ExampleCoupledDirichletBC::validParams()
 {
@@ -12,10 +13,16 @@ ExampleCoupledDirichletBC::validParams()
   return params;
 }
 
-ExampleCoupledDirichletBC::ExampleCoupledDirichletBC(const InputParameters & params)
-  : NodalBC(params), _alpha(getParam<Real>("alpha")), _coupled_var(coupledValue("coupled_variable"))
+
+ExampleCoupledDirichletBC::ExampleCoupledDirichletBC(
+  const InputParameters & params
+)
+  : NodalBC(params),
+  _alpha(getParam<Real>("alpha")), 
+  _coupled_var(coupledValue("coupled_variable"))
 {
 }
+
 
 Real
 ExampleCoupledDirichletBC::computeQpResidual()
