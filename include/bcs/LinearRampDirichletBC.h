@@ -17,8 +17,9 @@ protected:
   virtual Real computeQpResidual() override;
 
 private:
+
   // value and time at which value should be satisfied
-  Real _value, _time;
+  Real _value, _end_time;
 
   // Variable from previous timestep
   const VariableValue & _u_old;

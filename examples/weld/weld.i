@@ -102,7 +102,7 @@ cooldown2_end = ${fparse ${cooldown2_start} + ${time_cooldown_final} }
         variable = temp
         boundary = 'Heating1Inner'
         value = ${temp_heating}
-        time = ${heating1_end}
+        end_time = ${heating1_end}
     []
     [heating1_convection]
         type = ConvectiveHeatFluxBC
@@ -141,7 +141,7 @@ cooldown2_end = ${fparse ${cooldown2_start} + ${time_cooldown_final} }
         variable = temp
         boundary = 'Heating2Inner'
         value = ${temp_heating}
-        time = ${heating1_end}
+        end_time = ${heating1_end}
     []
     [heating2_convection]
         type = ConvectiveHeatFluxBC

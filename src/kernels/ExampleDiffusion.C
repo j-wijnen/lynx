@@ -17,7 +17,6 @@ ExampleDiffusion::ExampleDiffusion(
   : Diffusion(params),
     _diffusivity(getMaterialProperty<Real>("diffusivity"))
 {
-
 }
 
 
