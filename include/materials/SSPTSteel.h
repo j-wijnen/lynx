@@ -31,20 +31,37 @@ protected:
 
 private:
 
-  Real _austenite_transformation();
+  Real _austenite_transformation(
+    Real temp,
+    Real dt
+  );
 
-  PhaseIncrement _diffusive_transformation_linear(
+  // Diffusive transformation using Kirkaldy equations
+  // returns (dx, dnuc)
+  std::tuple<Real,Real> _diffusive_transformation_linear(
     Real nuc,
     Real x,
     Real fun_tc,
+    Real temp,
     Real dt
   );
+
+  // Calculates the incremenet in martensite upon heating using the
+  // Koistenen-Marburger equation
+  Real _martensite_transformation();
 
   Real _fun_tc(
     Real temp_ref,
     int temp_power,
     Real Gsize_factor,
     Real fcomp
+  );
+
+  // Reduces the time increment to be between lower and upper bounds
+  // returns (T_split, dt_split)
+  std::tuple<Real,Real> _split_increment(
+    Real temp_lower,
+    Real temp_upper
   );
 
   const VariableValue & _temp, 
