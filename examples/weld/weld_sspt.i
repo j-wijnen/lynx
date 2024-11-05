@@ -84,52 +84,52 @@ cooldown1_end = ${fparse ${cooldown1_start} + ${time_cooldown} }
         prop_names = 'density heat_capacity'
         prop_values = '0.0076 0.004484'
     []
-    # [sspt_base]
-    #     type = SSPTSteel
-    #     block = Base_QUAD8
-    #     variable = temp
-    #     output_properties = 'frac_a frac_f'
-    #     outputs = out
-    #     frac_f = 1.0
-    #     comp_C = 0.176
-    #     comp_Si = 0.217
-    #     comp_Mn = 1.37
-    #     comp_P = 0.016
-    #     comp_V = 0.053
-    #     comp_Ti = 0.002
-    #     comp_Cr = 0.015
-    #     comp_Ni = 0.02
-    #     comp_Mo = 0.002
-    #     comp_As = 0.011 
-    #     comp_Al = 0.026
-    #     temp_Ae3 = 823.2
-    #     temp_Ae1 = 706.7
-    #     temp_Bs = 605.6
-    #     temp_Ms = 417.8
-    # []
-    # [sspt_weld]
-    #     type = SSPTSteel
-    #     block = 'Weld1_QUAD8 Weld2_QUAD8'
-    #     variable = temp
-    #     output_properties = 'frac_a frac_f'
-    #     outputs = out
-    #     frac_a = 1.0
-    #     comp_C = 0.176
-    #     comp_Si = 0.217
-    #     comp_Mn = 1.37
-    #     comp_P = 0.016
-    #     comp_V = 0.053
-    #     comp_Ti = 0.002
-    #     comp_Cr = 0.015
-    #     comp_Ni = 0.02
-    #     comp_Mo = 0.002
-    #     comp_As = 0.011 
-    #     comp_Al = 0.026
-    #     temp_Ae3 = 823.2
-    #     temp_Ae1 = 706.7
-    #     temp_Bs = 605.6
-    #     temp_Ms = 417.8
-    # []
+    [sspt_base]
+        type = SSPTSteel
+        block = Base_QUAD8
+        variable = temp
+        output_properties = 'frac_a frac_f frac_p frac_b frac_m'
+        outputs = out
+        frac_f = 1.0
+        comp_C = 0.176
+        comp_Si = 0.217
+        comp_Mn = 1.37
+        comp_P = 0.016
+        comp_V = 0.053
+        comp_Ti = 0.002
+        comp_Cr = 0.015
+        comp_Ni = 0.02
+        comp_Mo = 0.002
+        comp_As = 0.011 
+        comp_Al = 0.026
+        temp_Ae3 = 823.2
+        temp_Ae1 = 706.7
+        temp_Bs = 605.6
+        temp_Ms = 417.8
+    []
+    [sspt_weld]
+        type = SSPTSteel
+        block = 'Weld1_QUAD8 Weld2_QUAD8'
+        variable = temp
+        output_properties = 'frac_a frac_f frac_p frac_b frac_m'
+        outputs = out
+        frac_a = 1.0
+        comp_C = 0.176
+        comp_Si = 0.217
+        comp_Mn = 1.37
+        comp_P = 0.016
+        comp_V = 0.053
+        comp_Ti = 0.002
+        comp_Cr = 0.015
+        comp_Ni = 0.02
+        comp_Mo = 0.002
+        comp_As = 0.011 
+        comp_Al = 0.026
+        temp_Ae3 = 823.2
+        temp_Ae1 = 706.7
+        temp_Bs = 605.6
+        temp_Ms = 417.8
+    []
 []
 
 [BCs]
@@ -143,7 +143,7 @@ cooldown1_end = ${fparse ${cooldown1_start} + ${time_cooldown} }
     []
 []
 
-[UserObjects]
+[MeshModifiers]
     [GlobalSubdomainModifier]
         type = 'TimedSubdomainModifier'
         times =       '${heating1_end}'
