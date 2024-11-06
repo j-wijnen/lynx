@@ -195,6 +195,7 @@ SSPTSteel::computeQpProperties()
     {
       std::tie(temp_split, dt_split) = _split_increment(_temp_Bs, _temp_Ae3);
       fun_tc = _fun_tc(_temp_Ae3-temp_split, 3, 0.41, _fcomp_f);
+      std::cout << " dt_split f: " << dt_split << std::endl;
       std::tie(dxf, dnucf) = _diffusive_transformation_linear(_nucf_old[_qp], _xf_old[_qp], 
         fun_tc, temp_split, dt_split);
     }
@@ -205,8 +206,18 @@ SSPTSteel::computeQpProperties()
     {
       std::tie(temp_split, dt_split) = _split_increment(_temp_Bs, _temp_Ae1);
       fun_tc = _fun_tc(_temp_Ae1-temp_split, 3, 0.32, _fcomp_p);
+      std::cout << " dt_split p: " << dt_split << std::endl;
       std::tie(dxp, dnucp) = _diffusive_transformation_linear(_nucp_old[_qp], _xp_old[_qp], 
         fun_tc, temp_split, dt_split);
+    }
+
+    if( dxp < 0.0 )
+    {
+      std::cout << "dxp: " << dxp << std::endl;
+      std::cout << "temp_split: " << temp_split << " dt_split: " << dt_split << std::endl;
+      std::cout << "Bs: " << _temp_Bs << " Ae3: " << _temp_Ae3 << std::endl;
+      std::cout << "fun_tc: " << fun_tc << " Ae3: " << _temp_Ae3 << std::endl;
+      throw;
     }
 
     // Bainite transformation
@@ -215,6 +226,7 @@ SSPTSteel::computeQpProperties()
     {
       std::tie(temp_split, dt_split) = _split_increment(_temp_Ms, _temp_Bs);
       fun_tc = _fun_tc(_temp_Bs-temp_split, 2, 0.29, _fcomp_b);
+      std::cout << " dt_split b: " << dt_split << std::endl;
       std::tie(dxb, dnucb) = _diffusive_transformation_linear(_nucb_old[_qp], _xb_old[_qp], 
         fun_tc, temp_split, dt_split);
     }
@@ -244,6 +256,41 @@ SSPTSteel::computeQpProperties()
   _nucp[_qp] = _nucp_old[_qp] + dnucp;
   _nucb[_qp] = _nucb_old[_qp] + dnucb;
 
+  // Need to enforce bounds due to numerical inaccuracies
+  _xa[_qp] = std::min(std::max(_xa[_qp], 0.0), 1.0);
+  _xf[_qp] = std::min(std::max(_xf[_qp], 0.0), 1.0);
+  _xp[_qp] = std::min(std::max(_xp[_qp], 0.0), 1.0);
+  _xb[_qp] = std::min(std::max(_xb[_qp], 0.0), 1.0);
+  _xm[_qp] = std::min(std::max(_xm[_qp], 0.0), 1.0);
+
+  // Phases have to re-nucleate if almost zero
+  if( _xf[_qp] < _tolerance && _nucf[_qp] >= 1.0 )
+    _nucf[_qp] = 0.0;
+  if( _xp[_qp] < _tolerance && _nucp[_qp] >= 1.0 )
+    _nucp[_qp] = 0.0;
+  if( _xb[_qp] < _tolerance && _nucb[_qp] >= 1.0 )
+    _nucb[_qp] = 0.0;
+
+
+  double xsum = _xa[_qp] + _xf[_qp] + _xp[_qp] + _xb[_qp] + _xm[_qp];
+  if( xsum > 1.0 + _tolerance )
+  {
+    std::cout << "xsum error\n";
+    std::cout << "xa: " << _xa[_qp] << ", xf: " << _xf[_qp] << std::endl;
+    std::cout << "xp: " << _xp[_qp] << ", xb: " << _xb[_qp] << std::endl;
+    std::cout << "xm: " << _xm[_qp] << ", corr: " << corr << std::endl;
+    std::cout << "dxf: " << dxf << ", " << "dxa: " << dxa << std::endl;
+    std::cout << "dxp: " << dxp << ", " << "dxb: " << dxb << std::endl;
+    std::cout << "dxm: " << dxm << std::endl;
+    throw;
+  }
+
+  // if( corr < 0.99 )
+  // {
+  //   std::cout << "corr error\n";
+  //   std::cout << corr << std::endl;
+  //   throw;
+  // }
 }
 
 
@@ -274,9 +321,11 @@ std::tuple<Real,Real>
 SSPTSteel::_diffusive_transformation_linear(
   Real nuc,
   Real x,
+  Real temp_lower,
+  Real temp_upper,
   Real fun_tc,
-  Real temp,
-  Real dt
+  Real Gsize_factor,
+  int ucooltemp_power
 )
 {
   Real dnuc, dx, dxdt;
@@ -304,6 +353,11 @@ SSPTSteel::_diffusive_transformation_linear(
 
     if( x + dx > 1.0 )
       dx = 1.0 - x;
+  }
+
+  if( dx < 0.0 )
+  {
+    std::cout << dx << ", " << x << ", " << dt << ", " << fun_tc << std::endl; throw;
   }
 
   return {dx, dnuc};

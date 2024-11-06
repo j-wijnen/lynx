@@ -5,13 +5,6 @@
 #include "LinearInterpolation.h"
 
 
-struct PhaseIncrement
-{
-  Real dx; 
-  Real dnuc;
-};
-
-
 class SSPTSteel : public Material 
 {
 
@@ -31,6 +24,7 @@ protected:
 
 private:
 
+  // Austenite transformation using LeBlond equation
   Real _austenite_transformation(
     Real temp,
     Real dt
@@ -41,9 +35,11 @@ private:
   std::tuple<Real,Real> _diffusive_transformation_linear(
     Real nuc,
     Real x,
+    Real temp_lower,
+    Real temp_upper,
     Real fun_tc,
-    Real temp,
-    Real dt
+    Real Gsize_factor,
+    int ucooltemp_power
   );
 
   // Calculates the incremenet in martensite upon heating using the
@@ -64,9 +60,11 @@ private:
     Real temp_upper
   );
 
+  // Coupled variables
   const VariableValue & _temp, 
                       & _temp_old;
 
+  // Statefull material properties
   MaterialProperty<Real> & _xa,
                          & _xf,
                          & _xp,
@@ -86,13 +84,14 @@ private:
                                & _nucp_old,
                                & _nucb_old;
 
+  // Initial phase fractions (input)
   Real  _xa_init,
         _xf_init,
         _xp_init,
         _xb_init,
         _xm_init;
 
-  // Composition
+  // Composition (input)
   Real  _comp_C,
         _comp_Mn,
         _comp_Si,
@@ -108,15 +107,18 @@ private:
         _comp_Ti,
         _comp_Cu;
 
+  // Transformation temperatures
   Real  _temp_Ae3, 
         _temp_Ae1,
         _temp_Bs,
         _temp_Ms;
 
+  // Compositional functions
   Real  _fcomp_f,
         _fcomp_p,
         _fcomp_b;
 
+  // Misc. constants
   const Real _tolerance;
 };
 
