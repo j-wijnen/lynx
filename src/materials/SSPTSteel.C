@@ -190,46 +190,19 @@ SSPTSteel::computeQpProperties()
   else if( _xa[_qp] > _tolerance )
   {
     // Ferrite transformation
-    if( (_temp[_qp] > _temp_Bs && _temp[_qp] <= _temp_Ae3) 
-      || (_temp_old[_qp] > _temp_Bs && _temp_old[_qp] <= _temp_Ae3) )
-    {
-      std::tie(temp_split, dt_split) = _split_increment(_temp_Bs, _temp_Ae3);
-      fun_tc = _fun_tc(_temp_Ae3-temp_split, 3, 0.41, _fcomp_f);
-      std::cout << " dt_split f: " << dt_split << std::endl;
-      std::tie(dxf, dnucf) = _diffusive_transformation_linear(_nucf_old[_qp], _xf_old[_qp], 
-        fun_tc, temp_split, dt_split);
-    }
+    if( (_temp[_qp] > _temp_Bs && _temp[_qp] <= _temp_Ae3) ||
+        (_temp_old[_qp] > _temp_Bs && _temp_old[_qp] <= _temp_Ae3) )
+      std::tie(dxf, dnucf) = _diffusive_transformation_linear(ferrite);
 
     // Pearlite transformation
-    if( (_temp[_qp] > _temp_Bs && _temp[_qp] <= _temp_Ae1)
-      || (_temp_old[_qp] > _temp_Bs && _temp_old[_qp] <= _temp_Ae1) )
-    {
-      std::tie(temp_split, dt_split) = _split_increment(_temp_Bs, _temp_Ae1);
-      fun_tc = _fun_tc(_temp_Ae1-temp_split, 3, 0.32, _fcomp_p);
-      std::cout << " dt_split p: " << dt_split << std::endl;
-      std::tie(dxp, dnucp) = _diffusive_transformation_linear(_nucp_old[_qp], _xp_old[_qp], 
-        fun_tc, temp_split, dt_split);
-    }
-
-    if( dxp < 0.0 )
-    {
-      std::cout << "dxp: " << dxp << std::endl;
-      std::cout << "temp_split: " << temp_split << " dt_split: " << dt_split << std::endl;
-      std::cout << "Bs: " << _temp_Bs << " Ae3: " << _temp_Ae3 << std::endl;
-      std::cout << "fun_tc: " << fun_tc << " Ae3: " << _temp_Ae3 << std::endl;
-      throw;
-    }
+    if( (_temp[_qp] > _temp_Bs && _temp[_qp] <= _temp_Ae1) || 
+        (_temp_old[_qp] > _temp_Bs && _temp_old[_qp] <= _temp_Ae1) )
+      std::tie(dxp, dnucp) = _diffusive_transformation_linear(pearlite);
 
     // Bainite transformation
     if( (_temp[_qp] > _temp_Ms && _temp[_qp] <= _temp_Bs) 
-      || (_temp_old[_qp] > _temp_Ms && _temp_old[_qp] <= _temp_Bs) )
-    {
-      std::tie(temp_split, dt_split) = _split_increment(_temp_Ms, _temp_Bs);
-      fun_tc = _fun_tc(_temp_Bs-temp_split, 2, 0.29, _fcomp_b);
-      std::cout << " dt_split b: " << dt_split << std::endl;
-      std::tie(dxb, dnucb) = _diffusive_transformation_linear(_nucb_old[_qp], _xb_old[_qp], 
-        fun_tc, temp_split, dt_split);
-    }
+        || (_temp_old[_qp] > _temp_Ms && _temp_old[_qp] <= _temp_Bs) )
+      std::tie(dxb, dnucb) = _diffusive_transformation_linear(bainite);
 
     // Martensite transformation
     if( _temp[_qp] < _temp_Ms )
@@ -244,6 +217,12 @@ SSPTSteel::computeQpProperties()
     corr = (1.0 - _xa_old[_qp]) / dxa;
   else if( _xa_old[_qp] + dxa < 0.0 )
     corr = -_xa_old[_qp] / dxa;
+
+  if( _xa[_qp] != _xa[_qp] )
+  {
+    std::cout << "dxa: " << dxa << ", xa: " << _xa[_qp] << std::endl;
+    throw;
+  }
 
   // Update material properties
   _xa[_qp] = _xa_old[_qp] + corr * dxa;
@@ -271,26 +250,6 @@ SSPTSteel::computeQpProperties()
   if( _xb[_qp] < _tolerance && _nucb[_qp] >= 1.0 )
     _nucb[_qp] = 0.0;
 
-
-  double xsum = _xa[_qp] + _xf[_qp] + _xp[_qp] + _xb[_qp] + _xm[_qp];
-  if( xsum > 1.0 + _tolerance )
-  {
-    std::cout << "xsum error\n";
-    std::cout << "xa: " << _xa[_qp] << ", xf: " << _xf[_qp] << std::endl;
-    std::cout << "xp: " << _xp[_qp] << ", xb: " << _xb[_qp] << std::endl;
-    std::cout << "xm: " << _xm[_qp] << ", corr: " << corr << std::endl;
-    std::cout << "dxf: " << dxf << ", " << "dxa: " << dxa << std::endl;
-    std::cout << "dxp: " << dxp << ", " << "dxb: " << dxb << std::endl;
-    std::cout << "dxm: " << dxm << std::endl;
-    throw;
-  }
-
-  // if( corr < 0.99 )
-  // {
-  //   std::cout << "corr error\n";
-  //   std::cout << corr << std::endl;
-  //   throw;
-  // }
 }
 
 
@@ -316,9 +275,88 @@ SSPTSteel::_austenite_transformation(
   return _dt * (x_eq - _xa[_qp]) / (tau + dt);
 }
 
-
 std::tuple<Real,Real>
 SSPTSteel::_diffusive_transformation_linear(
+  Phase phase
+)
+{
+  Real temp_lower, temp_upper, Gsize_factor, fcomp, x, nuc;
+  int ucool_power;
+
+  switch( phase )
+  {
+    case ferrite:
+      x = _xf[_qp];
+      nuc = _nucf[_qp];
+      fcomp = _fcomp_f;
+      temp_lower = _temp_Bs;
+      temp_upper = _temp_Ae3;
+      Gsize_factor = 0.41;
+      ucool_power = 3;
+      break;
+    case pearlite:
+      x = _xp[_qp];
+      nuc = _nucp[_qp];
+      fcomp = _fcomp_p;
+      temp_lower = _temp_Bs;
+      temp_upper = _temp_Ae1;
+      Gsize_factor = 0.32;
+      ucool_power = 3;
+      break;
+    case bainite:
+      x = _xb[_qp];
+      nuc = _nucb[_qp];
+      fcomp = _fcomp_b;
+      temp_lower = _temp_Ms;
+      temp_upper = _temp_Ae3;
+      Gsize_factor = 0.29;
+      ucool_power = 2;
+      break;
+  }
+
+  Real temp_split, dt_split, fun_tc;
+
+  std::tie(temp_split, dt_split) = _split_increment( temp_lower, temp_upper );
+  fun_tc = _fun_tc( temp_upper-temp_split, 2, 0.29, _fcomp_b );
+
+  Real dnuc, dx, dxdt;
+
+  dnuc = 0.0;
+  dx = 0.0;
+
+  // Nucleation phase
+  if( nuc < 1.0 - _tolerance )
+  {
+    dxdt = fun_tc / 0.10434035495809084;
+    dnuc = dxdt * dt_split;
+
+    if( nuc + dnuc >= 1.0 )
+    {
+      dx = 0.01;
+      dt_split = (nuc + dnuc - 1.0) / dxdt;
+    }
+  }
+
+  // Growth phase
+  if( nuc + dnuc >= 1.0 - _tolerance )
+  {
+    dx += 0.5134989515253945 * dt_split * fun_tc;
+
+    if( x + dx > 1.0 )
+      dx = 1.0 - x;
+  }
+
+  if( dx < 0.0 )
+  {
+    std::cout << dx << ", " << x << ", " << dt_split << ", " << fun_tc << std::endl; throw;
+  }
+
+  return {dx, dnuc};
+}
+
+
+std::tuple<Real,Real>
+SSPTSteel::_diffusive_transformation_old(
   Real nuc,
   Real x,
   Real temp_lower,
@@ -329,6 +367,8 @@ SSPTSteel::_diffusive_transformation_linear(
 )
 {
   Real dnuc, dx, dxdt;
+
+  Real dt;
 
   dnuc = 0.0;
   dx = 0.0;
@@ -372,13 +412,13 @@ SSPTSteel::_martensite_transformation()
 
 Real 
 SSPTSteel::_fun_tc(
-  Real temp_ucool,
-  int temp_power,
+  Real fcomp,
   Real Gsize_factor,
-  Real fcomp
+  Real ucool_temp,
+  int ucool_power
 )
 {
-  return std::pow(temp_ucool, temp_power) * std::exp(-1.384e4/(_temp[_qp]+273.15)) 
+  return std::pow(ucool_temp, ucool_power) * std::exp(-1.384e4/(_temp[_qp]+273.15)) 
         * std::pow(2.0, Gsize_factor*_Gsize[_qp]) / fcomp;
 }
 

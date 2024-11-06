@@ -5,6 +5,15 @@
 #include "LinearInterpolation.h"
 
 
+enum Phase {
+  ferrite,
+  pearlite,
+  bainite,
+  martensite,
+  austenite
+};
+
+
 class SSPTSteel : public Material 
 {
 
@@ -33,6 +42,10 @@ private:
   // Diffusive transformation using Kirkaldy equations
   // returns (dx, dnuc)
   std::tuple<Real,Real> _diffusive_transformation_linear(
+    Phase phase
+  );
+
+  std::tuple<Real,Real> _diffusive_transformation_old(
     Real nuc,
     Real x,
     Real temp_lower,
@@ -47,10 +60,10 @@ private:
   Real _martensite_transformation();
 
   Real _fun_tc(
-    Real temp_ref,
-    int temp_power,
+    Real fcomp,
     Real Gsize_factor,
-    Real fcomp
+    Real ucool_temp,
+    int ucool_power
   );
 
   // Reduces the time increment to be between lower and upper bounds
