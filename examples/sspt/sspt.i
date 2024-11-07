@@ -198,7 +198,6 @@ t_total = 120
        blocks_from = '2'
        blocks_to =   '1'
        execute_on = 'INITIAL TIMESTEP_BEGIN'
-       apply_initial_conditions = true
    []
 []
 
