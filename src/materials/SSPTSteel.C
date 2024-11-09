@@ -36,6 +36,10 @@ SSPTSteel::validParams()
   params.addParam<Real>("temp_Bs", 0.0, "Bainite transformation temperature");
   params.addParam<Real>("temp_Ms", 0.0, "Martensite transformation temperature");
 
+  params.addParam<Real>("grain_size_init", 30.0, "Initial austenite grain size");
+  params.addParam<Real>("grain_size_min", 30.0, "Minimum austenite grain size");
+  params.addParam<Real>("grain_size_max", 30.0, "Maximum austenite grain size");
+
   return params;
 }
 
@@ -67,6 +71,7 @@ SSPTSteel::SSPTSteel(
   _nucf_old(getMaterialPropertyOld<Real>("nuc_f")),
   _nucp_old(getMaterialPropertyOld<Real>("nuc_p")),
   _nucb_old(getMaterialPropertyOld<Real>("nuc_b")),
+  _Gsize_old(getMaterialPropertyOld<Real>("grain_size")),
 
   // Initial fractions
   _x_init{getParam<Real>("frac_f"),
@@ -95,7 +100,12 @@ SSPTSteel::SSPTSteel(
   _temp_Ae3(getParam<Real>("temp_Ae3")),
   _temp_Ae1(getParam<Real>("temp_Ae1")),
   _temp_Bs(getParam<Real>("temp_Bs")),
-  _temp_Ms(getParam<Real>("temp_Ms"))
+  _temp_Ms(getParam<Real>("temp_Ms")),
+
+  // Austenite grain sizes
+  _Gsize_init(getParam<Real>("grain_size_init")),
+  _Gsize_min(getParam<Real>("grain_size_min")),
+  _Gsize_max(getParam<Real>("grain_size_max"))
 {
   // Bound check on fractions
   Real fracsum = 0.0;
@@ -167,7 +177,7 @@ SSPTSteel::initQpStatefulProperties()
   _nucp[_qp] = _x_init[pearlite] < _tolerance ? 0.0 : 1.0;
   _nucb[_qp] = _x_init[bainite] < _tolerance ? 0.0 : 1.0;
 
-  _Gsize[_qp] = 7.0;
+  _Gsize[_qp] = _Gsize_init;
 }
 
 
@@ -185,17 +195,27 @@ SSPTSteel::computeQpProperties()
        dxm = 0.0,
        dnucf = 0.0,
        dnucp = 0.0,
-       dnucb = 0.0;
+       dnucb = 0.0,
+       dGsize = 0.0;
 
-  // Heating stage, austenite formation
-  if( dtemp > 0.0 && _xa[_qp] < 1.0 - _tolerance && checkTemperatureRange(austenite) )
+  // Heating stage, austenite formation/grain growth
+  if( dtemp > 0.0 && checkTemperatureRange(austenite) )
   {
-    dxa = austeniteTransformation();
+    if( _xa[_qp] < 1.0 - _tolerance )
+    {
+      dxa = austeniteTransformation();
+      
+      dxf = -dxa * _xf[_qp]/(1.0 - _xa[_qp]);
+      dxp = -dxa * _xp[_qp]/(1.0 - _xa[_qp]);
+      dxb = -dxa * _xb[_qp]/(1.0 - _xa[_qp]);
+      dxm = -dxa * _xm[_qp]/(1.0 - _xa[_qp]);
+    }
+
+    // Reset initial grain size if first austenitization inc
+    if( _temp_old[_qp] <= _temp_lower[austenite] )
+      dGsize = (_xa_old[_qp] - 1.0) * _Gsize_old[_qp] + (1.0 - _xa_old[_qp])*_Gsize_min;
     
-    dxf = -dxa * _xf[_qp]/(1.0 - _xa[_qp]);
-    dxp = -dxa * _xp[_qp]/(1.0 - _xa[_qp]);
-    dxb = -dxa * _xb[_qp]/(1.0 - _xa[_qp]);
-    dxm = -dxa * _xm[_qp]/(1.0 - _xa[_qp]);
+    dGsize += grainGrowth();
   }
 
   // Cooling stage, austenite decomposition
@@ -233,6 +253,8 @@ SSPTSteel::computeQpProperties()
   _nucf[_qp] = _nucf_old[_qp] + dnucf;
   _nucp[_qp] = _nucp_old[_qp] + dnucp;
   _nucb[_qp] = _nucb_old[_qp] + dnucb;
+
+  _Gsize[_qp] = _Gsize_old[_qp] + dGsize;
 
   // Phases have to re-nucleate if almost zero
   if( _xf[_qp] < _tolerance && _nucf[_qp] >= 1.0 )
@@ -274,6 +296,18 @@ SSPTSteel::austeniteTransformation()
 }
 
 
+Real 
+SSPTSteel::grainGrowth()
+{
+  // Split increment if only partially in temperature range
+  Real temp, dt;
+  std::tie(temp, dt) = splitIncrement(austenite);
+
+  return dt * 10.0e8 * exp(-22853.0/(temp+273.15)) 
+    * (1.0/_Gsize_old[_qp] - 1.0/_Gsize_max);
+}
+
+
 std::tuple<Real,Real>
 SSPTSteel::diffusiveTransformation(
   Phase phase,
@@ -303,7 +337,7 @@ SSPTSteel::diffusiveTransformation(
   }
 
   // Transformation phase
-  if( nuc + dnuc >= 1.0 - _tolerance )
+  if( nuc + dnuc >= 1.0 )
   {
     Real x0 = x + dx,
          x1 = x0,
@@ -330,11 +364,6 @@ SSPTSteel::diffusiveTransformation(
       cq = (ct-1.0)*(cr-1.0)*(cs-1.0);
 
       x = x2 + cp / cq;
-
-      // std::cout << "\n" << "x " << x << " r " << r << " dt " << dt << " " << _dt << std::endl;
-      // std::cout << "x1 " << x1 << " r1 " << r1 << std::endl;
-      // std::cout << "x2 " << x2 << " r2 " << r2 << std::endl;
-      // std::cout << "x3 " << x3 << " r3 " << r3 << std::endl;
 
       // Bisection method if outside bounds
       if( !((x > x1 && x < x2 && r1*r2 < 0.) || (x > x2 && x < x3 && r2*r3 < 0.)) )
@@ -392,9 +421,13 @@ SSPTSteel::funTc(
   Real temp
 )
 {
+  Real Gsize_astm = 2.88539 * std::log(254.0/_Gsize[_qp]) + 1.0;
+
+  Gsize_astm = 7.163588007638449;
+
   return std::pow(_temp_upper[phase]-temp, _ucool_exponent[phase]) 
     * std::exp(-1.384e4/(temp+273.15)) 
-    * std::pow(2.0, _Gsize_factor[phase]*_Gsize[_qp]) / _fcomp[phase];
+    * std::pow(2.0, _Gsize_factor[phase]*Gsize_astm) / _fcomp[phase];
 }
 
 

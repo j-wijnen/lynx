@@ -42,6 +42,8 @@ protected:
   // Austenite transformation using LeBlond equation
   Real austeniteTransformation();
 
+  Real grainGrowth();
+
   // Diffusive transformation using Kirkaldy equations
   std::tuple<Real,Real> diffusiveTransformation(
     Phase phase,
@@ -76,7 +78,7 @@ protected:
   const VariableValue & _temp, 
                       & _temp_old;
 
-  // Statefull material properties
+  // Stateful material properties
   MaterialProperty<Real> & _xa,
                          & _xf,
                          & _xp,
@@ -94,7 +96,8 @@ protected:
                                & _xm_old,
                                & _nucf_old,
                                & _nucp_old,
-                               & _nucb_old;
+                               & _nucb_old,
+                               & _Gsize_old;
 
   // Initial phase fractions (input)
   std::array<Real,5> _x_init;
@@ -123,6 +126,11 @@ protected:
 
   std::array<Real,5>  _temp_lower,
                       _temp_upper;
+
+  // Grain sizes (PAG)
+  Real _Gsize_init,
+       _Gsize_min,
+       _Gsize_max;
 
   // Compositional functions
   std::array<Real,3> _fcomp;
