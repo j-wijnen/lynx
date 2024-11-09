@@ -32,7 +32,7 @@ LinearRampDirichletBC::LinearRampDirichletBC(
 Real
 LinearRampDirichletBC::computeQpResidual()
 {
-  // Apply value after time
+  // Apply constant value after end time is reached
   if( _t >= _end_time )
     return _u[_qp] - _value;
 

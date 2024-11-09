@@ -63,6 +63,25 @@ t_total = 120
   []
 []
 
+# Use linear output for frac_f
+[AuxVariables]
+  [frac_f]
+    order = first
+    family = monomial
+    block = '0 1'
+  []
+[]
+
+[AuxKernels]
+  [./copy_frac_f]
+    type = MaterialRealAux
+    property = frac_f
+    variable = frac_f
+    block = '0 1'
+    execute_on = timestep_end
+  [../]
+[]
+
 [ICs]
     [base_ic]
         type = ConstantIC
@@ -106,9 +125,12 @@ t_total = 120
         type = SSPTSteel
         block = 0
         variable = temp
-        output_properties = 'frac_a frac_f frac_p frac_b frac_m'
+        output_properties = 'frac_a frac_p frac_b frac_m grain_size'
         outputs = out
         frac_f = 1.0
+        grain_size_init = 30
+        grain_size_min = 10
+        grain_size_max = 100
         comp_C = 0.176
         comp_Si = 0.217
         comp_Mn = 1.37
@@ -129,9 +151,12 @@ t_total = 120
         type = SSPTSteel
         block = 1
         variable = temp
-        output_properties = 'frac_a frac_f frac_p frac_b frac_m'
+        output_properties = 'frac_a frac_p frac_b frac_m grain_size'
         outputs = out
         frac_a = 1.0
+        grain_size_init = 100
+        grain_size_min = 10
+        grain_size_max = 100
         comp_C = 0.176
         comp_Si = 0.217
         comp_Mn = 1.37
@@ -198,7 +223,6 @@ t_total = 120
        blocks_from = '2'
        blocks_to =   '1'
        execute_on = 'INITIAL TIMESTEP_BEGIN'
-       apply_initial_conditions = true
    []
 []
 
@@ -248,6 +272,6 @@ t_total = 120
 [Outputs]
     [out]
         type = Exodus
-        time_step_interval = 2
+        time_step_interval = 1
     []
 []

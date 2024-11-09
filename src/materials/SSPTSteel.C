@@ -36,9 +36,12 @@ SSPTSteel::validParams()
   params.addParam<Real>("temp_Bs", 0.0, "Bainite transformation temperature");
   params.addParam<Real>("temp_Ms", 0.0, "Martensite transformation temperature");
 
+  params.addParam<Real>("grain_size_init", 30.0, "Initial austenite grain size");
+  params.addParam<Real>("grain_size_min", 30.0, "Minimum austenite grain size");
+  params.addParam<Real>("grain_size_max", 30.0, "Maximum austenite grain size");
+
   return params;
 }
-
 
 
 SSPTSteel::SSPTSteel(
@@ -68,13 +71,14 @@ SSPTSteel::SSPTSteel(
   _nucf_old(getMaterialPropertyOld<Real>("nuc_f")),
   _nucp_old(getMaterialPropertyOld<Real>("nuc_p")),
   _nucb_old(getMaterialPropertyOld<Real>("nuc_b")),
+  _Gsize_old(getMaterialPropertyOld<Real>("grain_size")),
 
-  // Parameters
-  _xa_init(getParam<Real>("frac_a")),
-  _xf_init(getParam<Real>("frac_f")),
-  _xp_init(getParam<Real>("frac_p")),
-  _xb_init(getParam<Real>("frac_b")),
-  _xm_init(getParam<Real>("frac_m")),
+  // Initial fractions
+  _x_init{getParam<Real>("frac_f"),
+          getParam<Real>("frac_p"),
+          getParam<Real>("frac_b"),
+          getParam<Real>("frac_m"),
+          getParam<Real>("frac_a")},
 
   // Composition
   _comp_C(getParam<Real>("comp_C")),
@@ -98,142 +102,136 @@ SSPTSteel::SSPTSteel(
   _temp_Bs(getParam<Real>("temp_Bs")),
   _temp_Ms(getParam<Real>("temp_Ms")),
 
-  _tolerance(1e-4)
+  // Austenite grain sizes
+  _Gsize_init(getParam<Real>("grain_size_init")),
+  _Gsize_min(getParam<Real>("grain_size_min")),
+  _Gsize_max(getParam<Real>("grain_size_max"))
 {
   // Bound check on fractions
-  if( _xa_init < 0.0 || _xa_init > 1.0 )
-    mooseError("frac_a should be between 0 and 1");
-  if( _xf_init < 0.0 || _xf_init > 1.0 )
-    mooseError("frac_f should be between 0 and 1");
+  Real fracsum = 0.0;
 
-  // Ensure all fractions add to 1
-  Real fracsum = _xa_init + _xf_init + _xp_init + _xb_init + _xm_init;
+  for( const auto phase : phases )
+  {
+    if( _x_init[phase] < 0.0 || _x_init[phase] > 1.0 )
+      mooseError("Initial fractions should be between 0 and 1");
+
+    fracsum += _x_init[phase];
+  }
 
   if( fracsum < 1.0 )
-  {
-    _xa_init = 1.0 - fracsum;
-  }
+    _x_init[austenite] = 1.0 - fracsum;
   else
-  {
-    _xa_init /= fracsum;
-    _xf_init /= fracsum;
-    _xp_init /= fracsum;
-    _xb_init /= fracsum;
-    _xm_init /= fracsum;
-  }
+    for( const auto phase : phases )
+      _x_init[phase] /= fracsum;
 
   // Temperature formulas Grange
   if( _temp_Ae3 == 0.0 )
-    _temp_Ae3 = 5./9.*(1570. - 323.*_comp_C - 25.*_comp_Mn + 80.*_comp_Si - 32.*_comp_Ni - 3.*_comp_Cr - 30.);
+    _temp_Ae3 = 5./9.*(1570. - 323.*_comp_C - 25.*_comp_Mn + 80.*_comp_Si 
+      - 32.*_comp_Ni - 3.*_comp_Cr - 30.);
   if( _temp_Ae1 == 0.0 )
-    _temp_Ae3 = 5./9.*(1333. - 25.*_comp_Mn + 40.*_comp_Si - 26.*_comp_Ni + 42.*_comp_Cr - 32.);
+    _temp_Ae1 = 5./9.*(1333. - 25.*_comp_Mn + 40.*_comp_Si - 26.*_comp_Ni 
+      + 42.*_comp_Cr - 32.);
   if( _temp_Bs == 0.0 )
-    _temp_Bs = 637. - 58.*_comp_C - 35.*_comp_Mn - 15.*_comp_Ni - 34.*_comp_Cr - 41.*_comp_Mo;
-  if( _temp_Bs == 0.0 )
-    _temp_Ms = 539. - 423.*_comp_C - 30.4*_comp_Mn - 17.7*_comp_Ni - 12.1*_comp_Cr - 7.5*_comp_Mo + 10.*_comp_Co - 7.5*_comp_Si;
+    _temp_Bs = 637. - 58.*_comp_C - 35.*_comp_Mn - 15.*_comp_Ni 
+      - 34.*_comp_Cr - 41.*_comp_Mo;
+  if( _temp_Ms == 0.0 )
+    _temp_Ms = 539. - 423.*_comp_C - 30.4*_comp_Mn - 17.7*_comp_Ni 
+      - 12.1*_comp_Cr - 7.5*_comp_Mo + 10.*_comp_Co - 7.5*_comp_Si;
+
+  // Set upper and lower temperatures
+  _temp_lower[ferrite] = _temp_Bs;
+  _temp_upper[ferrite] = _temp_Ae3;
+
+  _temp_lower[pearlite] = _temp_Bs;
+  _temp_upper[pearlite] = _temp_Ae1;
+
+  _temp_lower[bainite] = _temp_Ms;
+  _temp_upper[bainite] = _temp_Bs;
+
+  _temp_lower[martensite] = -273.15;
+  _temp_upper[martensite] = _temp_Ms;
+
+  _temp_lower[austenite] = _temp_Ae1;
+  _temp_upper[austenite] = 1e4;
 
   // Composition formulas Li
-  _fcomp_f = std::exp(1.0 + 6.31*_comp_C + 1.78*_comp_Mn + 0.31*_comp_Si + 1.12*_comp_Ni + 2.7*_comp_Cr + 4.06*_comp_Mo);
-  _fcomp_p = std::exp(-4.25 + 4.12*_comp_C + 4.36*_comp_Mn + 0.44*_comp_Si + 1.71*_comp_Ni + 3.33*_comp_Ni + 5.19*std::sqrt(_comp_Mo));
-  _fcomp_b = std::exp(-10.23 + 10.18*_comp_C + 0.85*_comp_Mn + 0.55*_comp_Ni + 0.90*_comp_Cr + 0.36*_comp_Mo);
+  _fcomp[ferrite] = std::exp(1.0 + 6.31*_comp_C + 1.78*_comp_Mn + 0.31*_comp_Si 
+    + 1.12*_comp_Ni + 2.7*_comp_Cr + 4.06*_comp_Mo);
+  _fcomp[pearlite] = std::exp(-4.25 + 4.12*_comp_C + 4.36*_comp_Mn + 0.44*_comp_Si 
+    + 1.71*_comp_Ni + 3.33*_comp_Ni + 5.19*std::sqrt(_comp_Mo));
+  _fcomp[bainite] = std::exp(-10.23 + 10.18*_comp_C + 0.85*_comp_Mn 
+    + 0.55*_comp_Ni + 0.90*_comp_Cr + 0.36*_comp_Mo);
 }
 
 
 void
 SSPTSteel::initQpStatefulProperties()
 {
-  _xa[_qp] = _xa_init;
-  _xf[_qp] = _xf_init;
-  _xp[_qp] = _xp_init;
-  _xb[_qp] = _xb_init;
-  _xm[_qp] = _xm_init;
+  _xf[_qp] = _x_init[ferrite];
+  _xp[_qp] = _x_init[pearlite];
+  _xb[_qp] = _x_init[bainite];
+  _xm[_qp] = _x_init[martensite];
+  _xa[_qp] = _x_init[austenite];
 
-  _nucf[_qp] = _xf_init < _tolerance ? 0.0 : 1.0;
-  _nucp[_qp] = _xp_init < _tolerance ? 0.0 : 1.0;
-  _nucb[_qp] = _xb_init < _tolerance ? 0.0 : 1.0;
+  _nucf[_qp] = _x_init[ferrite] < _tolerance ? 0.0 : 1.0;
+  _nucp[_qp] = _x_init[pearlite] < _tolerance ? 0.0 : 1.0;
+  _nucb[_qp] = _x_init[bainite] < _tolerance ? 0.0 : 1.0;
 
-  _Gsize[_qp] = 7.0;
+  _Gsize[_qp] = _Gsize_init;
 }
 
 
 void
 SSPTSteel::computeQpProperties()
 {
-  Real dxa, dxf, dxp, dxb, dxm, dnucf, dnucp, dnucb, fun_tc, 
-    temp_split, dt_split;
+  if( _dt == 0.0 )
+    return;
 
-  dxa = 0.0;
-  dxf = 0.0;
-  dxp = 0.0;
-  dxb = 0.0;
-  dxm = 0.0;
-  dnucf = 0.0;
-  dnucp = 0.0;
-  dnucb = 0.0;
+  Real dtemp = _temp[_qp] - _temp_old[_qp],
+       dxa = 0.0,
+       dxf = 0.0,
+       dxp = 0.0,
+       dxb = 0.0,
+       dxm = 0.0,
+       dnucf = 0.0,
+       dnucp = 0.0,
+       dnucb = 0.0,
+       dGsize = 0.0;
 
-  // Heating stage
-  if( _temp[_qp] > _temp_old[_qp] && _xa[_qp] < 1.0 - _tolerance )
+  // Heating stage, austenite formation/grain growth
+  if( dtemp > 0.0 && checkTemperatureRange(austenite) )
   {
-    if( _temp[_qp] > _temp_Ae3 || _temp_old[_qp] > _temp_Ae3 )
+    if( _xa[_qp] < 1.0 - _tolerance )
     {
-      std::tie(temp_split, dt_split) = _split_increment(_temp_Ae3, 1e99);
-      dxa = _austenite_transformation(temp_split, dt_split);
+      dxa = austeniteTransformation();
       
       dxf = -dxa * _xf[_qp]/(1.0 - _xa[_qp]);
       dxp = -dxa * _xp[_qp]/(1.0 - _xa[_qp]);
       dxb = -dxa * _xb[_qp]/(1.0 - _xa[_qp]);
       dxm = -dxa * _xm[_qp]/(1.0 - _xa[_qp]);
     }
+
+    // Reset initial grain size if first austenitization inc
+    if( _temp_old[_qp] <= _temp_lower[austenite] )
+      dGsize = (_xa_old[_qp] - 1.0) * _Gsize_old[_qp] + (1.0 - _xa_old[_qp])*_Gsize_min;
+    
+    dGsize += grainGrowth();
   }
 
-  // Cooling stage
-  else if( _xa[_qp] > _tolerance )
+  // Cooling stage, austenite decomposition
+  else if( dtemp <= 0.0 && _xa[_qp] > _tolerance )
   {
-    // Ferrite transformation
-    if( (_temp[_qp] > _temp_Bs && _temp[_qp] <= _temp_Ae3) 
-      || (_temp_old[_qp] > _temp_Bs && _temp_old[_qp] <= _temp_Ae3) )
-    {
-      std::tie(temp_split, dt_split) = _split_increment(_temp_Bs, _temp_Ae3);
-      fun_tc = _fun_tc(_temp_Ae3-temp_split, 3, 0.41, _fcomp_f);
-      std::cout << " dt_split f: " << dt_split << std::endl;
-      std::tie(dxf, dnucf) = _diffusive_transformation_linear(_nucf_old[_qp], _xf_old[_qp], 
-        fun_tc, temp_split, dt_split);
-    }
+    if( checkTemperatureRange(ferrite) )
+      std::tie(dxf, dnucf) = diffusiveTransformation(ferrite, _xf_old[_qp], _nucf_old[_qp]);
 
-    // Pearlite transformation
-    if( (_temp[_qp] > _temp_Bs && _temp[_qp] <= _temp_Ae1)
-      || (_temp_old[_qp] > _temp_Bs && _temp_old[_qp] <= _temp_Ae1) )
-    {
-      std::tie(temp_split, dt_split) = _split_increment(_temp_Bs, _temp_Ae1);
-      fun_tc = _fun_tc(_temp_Ae1-temp_split, 3, 0.32, _fcomp_p);
-      std::cout << " dt_split p: " << dt_split << std::endl;
-      std::tie(dxp, dnucp) = _diffusive_transformation_linear(_nucp_old[_qp], _xp_old[_qp], 
-        fun_tc, temp_split, dt_split);
-    }
+    if( checkTemperatureRange(pearlite) )
+      std::tie(dxp, dnucp) = diffusiveTransformation(pearlite, _xp_old[_qp], _nucp_old[_qp]);
 
-    if( dxp < 0.0 )
-    {
-      std::cout << "dxp: " << dxp << std::endl;
-      std::cout << "temp_split: " << temp_split << " dt_split: " << dt_split << std::endl;
-      std::cout << "Bs: " << _temp_Bs << " Ae3: " << _temp_Ae3 << std::endl;
-      std::cout << "fun_tc: " << fun_tc << " Ae3: " << _temp_Ae3 << std::endl;
-      throw;
-    }
+    if( checkTemperatureRange(bainite) )
+      std::tie(dxb, dnucb) = diffusiveTransformation(bainite, _xb_old[_qp], _nucb_old[_qp]);
 
-    // Bainite transformation
-    if( (_temp[_qp] > _temp_Ms && _temp[_qp] <= _temp_Bs) 
-      || (_temp_old[_qp] > _temp_Ms && _temp_old[_qp] <= _temp_Bs) )
-    {
-      std::tie(temp_split, dt_split) = _split_increment(_temp_Ms, _temp_Bs);
-      fun_tc = _fun_tc(_temp_Bs-temp_split, 2, 0.29, _fcomp_b);
-      std::cout << " dt_split b: " << dt_split << std::endl;
-      std::tie(dxb, dnucb) = _diffusive_transformation_linear(_nucb_old[_qp], _xb_old[_qp], 
-        fun_tc, temp_split, dt_split);
-    }
-
-    // Martensite transformation
-    if( _temp[_qp] < _temp_Ms )
-      dxm = _martensite_transformation();
+    if( checkTemperatureRange(martensite) )
+      dxm = martensiteTransformation();
 
     dxa = -(dxf + dxp + dxb + dxm);
   }
@@ -256,12 +254,7 @@ SSPTSteel::computeQpProperties()
   _nucp[_qp] = _nucp_old[_qp] + dnucp;
   _nucb[_qp] = _nucb_old[_qp] + dnucb;
 
-  // Need to enforce bounds due to numerical inaccuracies
-  _xa[_qp] = std::min(std::max(_xa[_qp], 0.0), 1.0);
-  _xf[_qp] = std::min(std::max(_xf[_qp], 0.0), 1.0);
-  _xp[_qp] = std::min(std::max(_xp[_qp], 0.0), 1.0);
-  _xb[_qp] = std::min(std::max(_xb[_qp], 0.0), 1.0);
-  _xm[_qp] = std::min(std::max(_xm[_qp], 0.0), 1.0);
+  _Gsize[_qp] = _Gsize_old[_qp] + dGsize;
 
   // Phases have to re-nucleate if almost zero
   if( _xf[_qp] < _tolerance && _nucf[_qp] >= 1.0 )
@@ -271,37 +264,23 @@ SSPTSteel::computeQpProperties()
   if( _xb[_qp] < _tolerance && _nucb[_qp] >= 1.0 )
     _nucb[_qp] = 0.0;
 
-
-  double xsum = _xa[_qp] + _xf[_qp] + _xp[_qp] + _xb[_qp] + _xm[_qp];
-  if( xsum > 1.0 + _tolerance )
-  {
-    std::cout << "xsum error\n";
-    std::cout << "xa: " << _xa[_qp] << ", xf: " << _xf[_qp] << std::endl;
-    std::cout << "xp: " << _xp[_qp] << ", xb: " << _xb[_qp] << std::endl;
-    std::cout << "xm: " << _xm[_qp] << ", corr: " << corr << std::endl;
-    std::cout << "dxf: " << dxf << ", " << "dxa: " << dxa << std::endl;
-    std::cout << "dxp: " << dxp << ", " << "dxb: " << dxb << std::endl;
-    std::cout << "dxm: " << dxm << std::endl;
-    throw;
-  }
-
-  // if( corr < 0.99 )
-  // {
-  //   std::cout << "corr error\n";
-  //   std::cout << corr << std::endl;
-  //   throw;
-  // }
+   // Need to enforce bounds due to numerical inaccuracies
+  _xa[_qp] = std::min(std::max(_xa[_qp], 0.0), 1.0);
+  _xf[_qp] = std::min(std::max(_xf[_qp], 0.0), 1.0);
+  _xp[_qp] = std::min(std::max(_xp[_qp], 0.0), 1.0);
+  _xb[_qp] = std::min(std::max(_xb[_qp], 0.0), 1.0);
+  _xm[_qp] = std::min(std::max(_xm[_qp], 0.0), 1.0);
 }
 
 
 Real  
-SSPTSteel::_austenite_transformation(
-  Real temp,
-  Real dt
-)
+SSPTSteel::austeniteTransformation()
 {
-  Real x_eq, tau;
+  // Split increment if only partially in temperature range
+  Real temp, dt;
+  std::tie(temp, dt) = splitIncrement(austenite);
 
+  Real x_eq, tau;
   if( temp <= _temp_Ae3 )
   {
     x_eq = (temp - _temp_Ae1) / (_temp_Ae3 - _temp_Ae1);
@@ -313,25 +292,36 @@ SSPTSteel::_austenite_transformation(
     tau = 0.05;
   }
 
-  return _dt * (x_eq - _xa[_qp]) / (tau + dt);
+  return _dt * (x_eq - _xa_old[_qp]) / (tau + dt);
+}
+
+
+Real 
+SSPTSteel::grainGrowth()
+{
+  // Split increment if only partially in temperature range
+  Real temp, dt;
+  std::tie(temp, dt) = splitIncrement(austenite);
+
+  return dt * 10.0e8 * exp(-22853.0/(temp+273.15)) 
+    * (1.0/_Gsize_old[_qp] - 1.0/_Gsize_max);
 }
 
 
 std::tuple<Real,Real>
-SSPTSteel::_diffusive_transformation_linear(
-  Real nuc,
+SSPTSteel::diffusiveTransformation(
+  Phase phase,
   Real x,
-  Real temp_lower,
-  Real temp_upper,
-  Real fun_tc,
-  Real Gsize_factor,
-  int ucooltemp_power
+  Real nuc
 )
 {
-  Real dnuc, dx, dxdt;
+  Real temp, dt;
+  std::tie(temp, dt) = splitIncrement(phase);
 
-  dnuc = 0.0;
-  dx = 0.0;
+  Real fun_tc = funTc(phase, temp),
+       dnuc = 0.0,
+       dx = 0.0,
+       dxdt;
 
   // Nucleation phase
   if( nuc < 1.0 - _tolerance )
@@ -342,22 +332,71 @@ SSPTSteel::_diffusive_transformation_linear(
     if( nuc + dnuc >= 1.0 )
     {
       dx = 0.01;
-      dt = (nuc - 1.0) / dxdt;
+      dt = (nuc + dnuc - 1.0) / dxdt;
     }
   }
 
-  // Growth phase
-  if( nuc + dnuc >= 1.0 - _tolerance )
+  // Transformation phase
+  if( nuc + dnuc >= 1.0 )
   {
-    dx += 0.5134989515253945 * dt * fun_tc;
+    Real x0 = x + dx,
+         x1 = x0,
+         x2 = 0.5*(x0 + 1.0),
+         x3 = 1.0;
 
-    if( x + dx > 1.0 )
-      dx = 1.0 - x;
-  }
+    Real r1 = diffusiveTransformationResidual(x0, x1, dt, fun_tc),
+         r2 = diffusiveTransformationResidual(x0, x2, dt, fun_tc),
+         r3 = diffusiveTransformationResidual(x0, x3, dt, fun_tc);
 
-  if( dx < 0.0 )
-  {
-    std::cout << dx << ", " << x << ", " << dt << ", " << fun_tc << std::endl; throw;
+    Real cr, cs, ct, cp, cq, r;
+
+    // Brentq root finding algorithm
+    unsigned int iter = 0;
+    while( true )
+    {
+      ++iter;
+
+      // New guess
+      cr = r2 / r3;
+      cs = r2 / r1;
+      ct = r1 / r3;
+      cp = cs*(ct*(cr-ct)*(x3-x2) - (1.0-cr)*(x2-x1));
+      cq = (ct-1.0)*(cr-1.0)*(cs-1.0);
+
+      x = x2 + cp / cq;
+
+      // Bisection method if outside bounds
+      if( !((x > x1 && x < x2 && r1*r2 < 0.) || (x > x2 && x < x3 && r2*r3 < 0.)) )
+        if( (r1 < 0. && r2 > 0.) || (r1 > 0. && r2 < 0.) )
+          x = 0.5 * (x1 + x2);
+        else
+          x = 0.5 * (x2 + x3);
+  
+      // Check convergence
+      r = diffusiveTransformationResidual(x0, x, dt, fun_tc);
+
+      if( std::abs(r) < _tolerance )
+        break;
+      else if( iter > 100 )
+        mooseError("Diffuse transformation did not converge");
+
+      // Update points
+      if( x > x1 && x < x2)
+      {
+        x3 = x2;
+        r3 = r2;
+      }
+      else
+      {
+        x1 = x2;
+        r1 = r2;
+      }
+
+      x2 = x;
+      r2 = r;
+    }
+
+    dx = x - x0;
   }
 
   return {dx, dnuc};
@@ -365,28 +404,54 @@ SSPTSteel::_diffusive_transformation_linear(
 
 
 Real
-SSPTSteel::_martensite_transformation()
-{
-  return (_xa[_qp] + _xm[_qp]) * (1.0 - exp(-1.1e-2*(_temp_Ms - _temp[_qp]))) - _xm[_qp];
-}
-
-Real 
-SSPTSteel::_fun_tc(
-  Real temp_ucool,
-  int temp_power,
-  Real Gsize_factor,
-  Real fcomp
+SSPTSteel::diffusiveTransformationResidual(
+  Real x0,
+  Real x,
+  Real dt,
+  Real fun_tc
 )
 {
-  return std::pow(temp_ucool, temp_power) * std::exp(-1.384e4/(_temp[_qp]+273.15)) 
-        * std::pow(2.0, Gsize_factor*_Gsize[_qp]) / fcomp;
+  return x - x0 - dt * fun_tc * std::pow(x, 0.4*(1.0-x)) * std::pow(1.0 - x, 0.4*x);
+}
+
+
+Real 
+SSPTSteel::funTc(
+  Phase phase,
+  Real temp
+)
+{
+  Real Gsize_astm = 2.88539 * std::log(254.0/_Gsize[_qp]) + 1.0;
+
+  Gsize_astm = 7.163588007638449;
+
+  return std::pow(_temp_upper[phase]-temp, _ucool_exponent[phase]) 
+    * std::exp(-1.384e4/(temp+273.15)) 
+    * std::pow(2.0, _Gsize_factor[phase]*Gsize_astm) / _fcomp[phase];
+}
+
+
+Real
+SSPTSteel::martensiteTransformation()
+{
+  return (_xa_old[_qp] + _xm_old[_qp]) * 
+    (1.0 - exp(-1.1e-2*(_temp_upper[martensite] - _temp[_qp]))) - _xm_old[_qp];
+}
+
+
+bool
+SSPTSteel::checkTemperatureRange(
+  Phase phase
+)
+{
+  return (_temp[_qp] > _temp_lower[phase] && _temp[_qp] <= _temp_upper[phase]) 
+    || (_temp_old[_qp] > _temp_lower[phase] && _temp_old[_qp] <= _temp_upper[phase]);
 }
 
 
 std::tuple<Real,Real> 
-SSPTSteel::_split_increment(
-  Real temp_lower,
-  Real temp_upper
+SSPTSteel::splitIncrement(
+  Phase phase
 )
 {
   Real temp, dt;
@@ -395,16 +460,16 @@ SSPTSteel::_split_increment(
   if( _temp[_qp] > _temp_old[_qp] )
   {
     // Lower bound
-    if( _temp_old[_qp] < temp_lower )
+    if( _temp_old[_qp] < _temp_lower[phase] )
     {
       temp = _temp[_qp];
-      dt = (_temp[_qp] - temp_lower) / (_temp[_qp] - _temp_old[_qp]) * _dt;
+      dt = (_temp[_qp] - _temp_lower[phase]) / (_temp[_qp] - _temp_old[_qp]) * _dt;
     }
     // Upper bound
-    else if( _temp[_qp] > temp_upper )
+    else if( _temp[_qp] > _temp_upper[phase] )
     {
-      temp = temp_upper;
-      dt = (temp_upper - _temp_old[_qp]) / (_temp[_qp] - _temp_old[_qp]) * _dt;
+      temp = _temp_upper[phase];
+      dt = (_temp_upper[phase] - _temp_old[_qp]) / (_temp[_qp] - _temp_old[_qp]) * _dt;
     }
     else
     {
@@ -417,16 +482,16 @@ SSPTSteel::_split_increment(
   else
   {
     // Upper bound
-    if( _temp_old[_qp] > temp_upper )
+    if( _temp_old[_qp] > _temp_upper[phase] )
     {
       temp = _temp[_qp];
-      dt = (temp_upper - _temp[_qp]) / (_temp_old[_qp] - _temp[_qp]) * _dt;
+      dt = (_temp_upper[phase] - _temp[_qp]) / (_temp_old[_qp] - _temp[_qp]) * _dt;
     }
     // Lower bound
-    else if( _temp[_qp] < temp_lower )
+    else if( _temp[_qp] < _temp_lower[phase] )
     {
-      temp = temp_lower;
-      dt = (_temp_old[_qp] - temp_lower) / (_temp_old[_qp] - _temp[_qp]) * _dt;
+      temp = _temp_lower[phase];
+      dt = (_temp_old[_qp] - _temp_lower[phase]) / (_temp_old[_qp] - _temp[_qp]) * _dt;
     }
     else
     {
