@@ -222,13 +222,13 @@ SSPTSteel::computeQpProperties()
   else if( dtemp <= 0.0 && _xa[_qp] > _tolerance )
   {
     if( checkTemperatureRange(ferrite) )
-      std::tie(dxf, dnucf) = diffusiveTransformation(ferrite, _xf[_qp], _nucf[_qp]);
+      std::tie(dxf, dnucf) = diffusiveTransformation(ferrite, _xf_old[_qp], _nucf_old[_qp]);
 
     if( checkTemperatureRange(pearlite) )
-      std::tie(dxp, dnucp) = diffusiveTransformation(pearlite, _xp[_qp], _nucp[_qp]);
+      std::tie(dxp, dnucp) = diffusiveTransformation(pearlite, _xp_old[_qp], _nucp_old[_qp]);
 
     if( checkTemperatureRange(bainite) )
-      std::tie(dxb, dnucb) = diffusiveTransformation(bainite, _xb[_qp], _nucb[_qp]);
+      std::tie(dxb, dnucb) = diffusiveTransformation(bainite, _xb_old[_qp], _nucb_old[_qp]);
 
     if( checkTemperatureRange(martensite) )
       dxm = martensiteTransformation();
@@ -292,7 +292,7 @@ SSPTSteel::austeniteTransformation()
     tau = 0.05;
   }
 
-  return _dt * (x_eq - _xa[_qp]) / (tau + dt);
+  return _dt * (x_eq - _xa_old[_qp]) / (tau + dt);
 }
 
 
@@ -434,8 +434,8 @@ SSPTSteel::funTc(
 Real
 SSPTSteel::martensiteTransformation()
 {
-  return (_xa[_qp] + _xm[_qp]) * 
-    (1.0 - exp(-1.1e-2*(_temp_upper[martensite] - _temp[_qp]))) - _xm[_qp];
+  return (_xa_old[_qp] + _xm_old[_qp]) * 
+    (1.0 - exp(-1.1e-2*(_temp_upper[martensite] - _temp[_qp]))) - _xm_old[_qp];
 }
 
 

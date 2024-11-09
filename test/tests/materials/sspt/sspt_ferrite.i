@@ -31,8 +31,6 @@
         variable = temp
         output_properties = 'frac_a frac_f'
         outputs = exodus
-        frac_a = 0.99
-        frac_f = 0.01
         comp_C = 0.176
         comp_Si = 0.217
         comp_Mn = 1.37
@@ -54,8 +52,8 @@
 
 [Executioner]
   type = Transient
-  end_time = 75
-  dt = 0.75
+  end_time = 80
+  dt = 0.80
 []
 
 [Outputs]

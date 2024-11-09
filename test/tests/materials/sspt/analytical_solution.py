@@ -20,7 +20,7 @@ def main():
     comp.Mo = 0.002
     comp.As = 0.011 
     comp.Al = 0.026
-    comp.G = 7.0
+    comp.G = 7.163588
 
     comp.Ae_form = "Grange"
     comp.Ms_form = "Andrews"
@@ -28,7 +28,7 @@ def main():
 
     T = 750
 
-    X_start = 0.01
+    X_start = 0.01e-8
     X_end = 0.99
     X = np.linspace(X_start, X_end)
 
@@ -56,8 +56,8 @@ def main():
 
     plt.plot(tf, X)
 
-    # data = np.loadtxt("ferrite.csv", skiprows=1, delimiter=",")
-    # plt.plot(data[:,1], data[:,0], linestyle=":")
+    data = np.loadtxt("ferrite.csv", skiprows=1, delimiter=",")
+    plt.plot(data[:,1], data[:,0], linestyle=":")
 
     plt.show()
 
