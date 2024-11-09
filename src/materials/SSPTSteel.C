@@ -174,6 +174,9 @@ SSPTSteel::initQpStatefulProperties()
 void
 SSPTSteel::computeQpProperties()
 {
+  if( _dt == 0.0 )
+    return;
+
   Real dtemp = _temp[_qp] - _temp_old[_qp],
        dxa = 0.0,
        dxf = 0.0,
@@ -313,9 +316,8 @@ SSPTSteel::diffusiveTransformation(
 
     Real cr, cs, ct, cp, cq, r;
 
-    unsigned int iter = 0;
-
     // Brentq root finding algorithm
+    unsigned int iter = 0;
     while( true )
     {
       ++iter;
@@ -328,6 +330,11 @@ SSPTSteel::diffusiveTransformation(
       cq = (ct-1.0)*(cr-1.0)*(cs-1.0);
 
       x = x2 + cp / cq;
+
+      // std::cout << "\n" << "x " << x << " r " << r << " dt " << dt << " " << _dt << std::endl;
+      // std::cout << "x1 " << x1 << " r1 " << r1 << std::endl;
+      // std::cout << "x2 " << x2 << " r2 " << r2 << std::endl;
+      // std::cout << "x3 " << x3 << " r3 " << r3 << std::endl;
 
       // Bisection method if outside bounds
       if( !((x > x1 && x < x2 && r1*r2 < 0.) || (x > x2 && x < x3 && r2*r3 < 0.)) )
