@@ -20,17 +20,28 @@ protected:
 
   virtual void computeQpProperties() override;
 
-private:
+  const std::string _prop_names,
+                    _prop_files;
+
+  const VariableValue & _temperature;
+
+  // Material properties to be defined
+  MaterialProperty<Real> * _properties;
 
   // Phase fractions
-  const MaterialProperty<Real> & _frac_f,
-                               & _frac_p,
-                               & _frac_b,
-                               & _frac_m,
-                               & _frac_a;
+  const MaterialProperty<Real> & _xf,
+                               & _xp,
+                               & _xb,
+                               & _xm,
+                               & _xa;
 
-  /// A helper object for performaing linear interpolations on tabulated data for calculating the
-  /// diffusivity property.
-  //LinearInterpolation _piecewise_func;
+  // Save phase/temperature dependent properties
+  std::vector<Real> _ferrite,
+                    _pearlite,
+                    _bainite,
+                    _martensite,
+                    _austenite;
+
+  LinearInterpolation _piecewise_func;
 
 };
