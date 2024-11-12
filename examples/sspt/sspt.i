@@ -112,22 +112,16 @@ t_total = 120
     [phaseproperties]
         type = PhaseFractionMaterialFromCSV
         variable = temp
-        prop_names = 'density'
-        prop_files = density.csv
+        prop_names = 'density thermal_conductivity'
+        prop_files = 'density.csv conductivity.csv'
         block = '0 1'
     []
-    [thermal]
-        type = HeatConductionMaterial
-        thermal_conductivity = 0.048
-        specific_heat = 0.45
+    [density]
+        type = GenericConstantMaterial
+        prop_names = specific_heat
+        prop_values = 0.45
         block = '0 1'
     []
-    #[density]
-    #    type = GenericConstantMaterial
-    #    prop_names = 'density'
-    #    prop_values = 0.0078
-    #    block = '0 1'
-    #[]
     [sspt_base]
         type = SSPTSteel
         block = 0
