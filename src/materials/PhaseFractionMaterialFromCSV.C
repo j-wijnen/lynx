@@ -2,6 +2,7 @@
 #include "DelimitedFileReader.h"
 #include "general_static_cast.h"
 
+
 registerMooseObject("LynxApp", PhaseFractionMaterialFromCSV);
 registerMooseObject("LynxApp", ADPhaseFractionMaterialFromCSV);
 
@@ -47,7 +48,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
 
   mooseAssert(nfiles == 1 || nfiles == nprops, "Number of files must be 1 or equal to the number of properties");
 
-  // Allocate space for each property
+  // Allocate memory for each property
   _properties.reserve(nprops);
   _ferrite.reserve(nprops);
   _pearlite.reserve(nprops);
@@ -56,6 +57,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
   _austenite.reserve(nprops);
   _piecewise_funcs.reserve(nfiles);
 
+  // Read CSV input files
   if(nprops == nfiles)
     readPropertiesMultipleFiles();
   else
@@ -111,9 +113,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::readPropertiesSingleFile()
   for( int i = 0; i < ndata; ++i )
     interp_values[i] = (Real) i;
 
-  std::cout << "A\n";
   _piecewise_funcs.push_back(GenericLinearInterpolation(temperature, interp_values)); 
-  std::cout << "B\n";
 
   for(unsigned int iprop = 0; iprop < _prop_names.size(); ++iprop)
   {
