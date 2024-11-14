@@ -4,15 +4,15 @@
 
 #include "LinearInterpolation.h"
 
-
-class PhaseFractionMaterialFromCSV : public Material 
+template<bool is_ad>
+class PhaseFractionMaterialFromCSVTempl : public Material 
 {
 
 public:
 
   static InputParameters validParams();
 
-  PhaseFractionMaterialFromCSV(
+  PhaseFractionMaterialFromCSVTempl(
     const InputParameters& params 
   );
 
@@ -23,10 +23,10 @@ protected:
   const std::vector<std::string> _prop_names,
                                  _prop_files;
 
-  const VariableValue & _temperature;
+  const GenericVariableValue<is_ad> & _temperature;
 
   // Material properties to be defined
-  std::vector<MaterialProperty<Real> *> _properties;
+  std::vector<GenericMaterialProperty<Real, is_ad> *> _properties;
 
   // Phase fractions
   const MaterialProperty<Real> & _xf,
@@ -42,6 +42,14 @@ protected:
                                  _martensite,
                                  _austenite;
 
-  std::vector<LinearInterpolation> _piecewise_funcs;
+  // Create interpolation type based on is_ad
+  typedef typename std::conditional<is_ad,ADLinearInterpolation,LinearInterpolation>::type 
+    GenericLinearInterpolation;
+
+  std::vector<GenericLinearInterpolation> _piecewise_funcs;
 
 };
+
+
+typedef PhaseFractionMaterialFromCSVTempl<false> PhaseFractionMaterialFromCSV;
+typedef PhaseFractionMaterialFromCSVTempl<true> ADPhaseFractionMaterialFromCSV;

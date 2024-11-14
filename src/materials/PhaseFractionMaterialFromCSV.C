@@ -2,10 +2,12 @@
 #include "DelimitedFileReader.h"
 
 registerMooseObject("LynxApp", PhaseFractionMaterialFromCSV);
+registerMooseObject("LynxApp", ADPhaseFractionMaterialFromCSV);
 
 
+template<bool is_ad>
 InputParameters
-PhaseFractionMaterialFromCSV::validParams()
+PhaseFractionMaterialFromCSVTempl<is_ad>::validParams()
 {
   InputParameters params = Material::validParams();
 
@@ -18,7 +20,8 @@ PhaseFractionMaterialFromCSV::validParams()
 }
 
 
-PhaseFractionMaterialFromCSV::PhaseFractionMaterialFromCSV(
+template<bool is_ad>
+PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
   const InputParameters & parameters
 )
   : Material(parameters),
@@ -28,7 +31,7 @@ PhaseFractionMaterialFromCSV::PhaseFractionMaterialFromCSV(
   _prop_files(getParam<std::vector<std::string>>("prop_files")),
 
   // Coupled temperature variable
-  _temperature(coupledValue("variable")),
+  _temperature(coupledGenericValue<is_ad>("variable")),
 
   // Required phase fractions
   _xf(getMaterialProperty<Real>("frac_f")),
@@ -51,7 +54,7 @@ PhaseFractionMaterialFromCSV::PhaseFractionMaterialFromCSV(
   for(unsigned int iprop = 0; iprop < nprops; ++iprop)
   {
     // Declare property
-    _properties.push_back(&declareProperty<Real>(_prop_names[iprop]));
+    _properties.push_back(&declareGenericProperty<Real, is_ad>(_prop_names[iprop]));
 
     // Read data from csv files
     MooseUtils::DelimitedFileReader csv_reader(_prop_files[iprop]);
@@ -71,13 +74,37 @@ PhaseFractionMaterialFromCSV::PhaseFractionMaterialFromCSV(
     for( int i = 0; i < ndata; ++i )
       interp_values[i] = (Real) i;
 
-    _piecewise_funcs.push_back(LinearInterpolation(temperature, interp_values));  
+    _piecewise_funcs.push_back(GenericLinearInterpolation(temperature, interp_values));  
   }
 }
 
-
+// AD implementation
+template<>
 void
-PhaseFractionMaterialFromCSV::computeQpProperties()
+PhaseFractionMaterialFromCSVTempl<true>::computeQpProperties()
+{
+  for(unsigned int iprop = 0; iprop < _properties.size(); ++iprop)
+  {
+    ADReal interp_value = _piecewise_funcs[iprop].sample(_temperature[_qp]);
+
+    // Calculate indices and interpolation weight of phase arrays
+    unsigned int ii = static_cast<unsigned int>(interp_value.value());
+    unsigned int jj = ii +1;
+    ADReal w = interp_value - static_cast<Real>(ii);
+
+    // Set actual property
+    (*_properties[iprop])[_qp] = ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) * _xf[_qp]
+      + ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj]) * _xp[_qp]
+      + ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj]) * _xb[_qp]
+      + ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj]) * _xm[_qp]
+      + ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]) * _xa[_qp];
+  }
+}
+
+// non-AD implementation
+template<>
+void
+PhaseFractionMaterialFromCSVTempl<false>::computeQpProperties()
 {
   for(unsigned int iprop = 0; iprop < _properties.size(); ++iprop)
   {
