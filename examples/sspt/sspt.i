@@ -113,7 +113,8 @@ t_total = 120
         type = PhaseFractionMaterialFromCSV
         variable = temp
         prop_names = 'density thermal_conductivity'
-        prop_files = 'density.csv conductivity.csv'
+        #prop_files = 'density.csv conductivity.csv'
+        prop_files = 'properties.csv'
         block = '0 1'
     []
     [density]

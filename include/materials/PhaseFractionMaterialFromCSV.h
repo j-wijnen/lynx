@@ -4,6 +4,7 @@
 
 #include "LinearInterpolation.h"
 
+
 template<bool is_ad>
 class PhaseFractionMaterialFromCSVTempl : public Material 
 {
@@ -18,7 +19,15 @@ public:
 
 protected:
 
+  virtual void readPropertiesMultipleFiles();
+
+  virtual void readPropertiesSingleFile();
+
   virtual void computeQpProperties() override;
+
+  virtual void computeQpPropertiesMultipleFiles();
+
+  virtual void computeQpPropertiesSingleFile();
 
   const std::vector<std::string> _prop_names,
                                  _prop_files;
