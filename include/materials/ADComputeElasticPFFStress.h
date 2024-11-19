@@ -3,8 +3,8 @@
 #include "ADComputeLinearElasticStress.h"
 
 /**
- * ADComputeLinearElasticStress computes the stress following linear elasticity theory (small
- * strains)
+ * ADComputeElasticPFFStress computes the degraded stress following linear elasticity theory (small
+ * strains) and corresponding strain energy for phase field fracture modelling
  */
 class ADComputeElasticPFFStress : public ADComputeLinearElasticStress
 {
@@ -24,4 +24,7 @@ protected:
 
   // Declared properteis
   ADMaterialProperty<Real> & _strain_energy;
+
+  // Stateful properties
+  const MaterialProperty<Real> & _strain_energy_old;
 };

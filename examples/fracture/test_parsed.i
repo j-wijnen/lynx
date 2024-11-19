@@ -49,8 +49,7 @@
 []
 
 [Materials]
-  active = 'elasticity stress driving_force degradation'
-  #active = 'elasticity stress degradationparsed drivingforceparsed'
+  active = 'elasticity stress degradationparsed drivingforceparsed'
   [elasticity]
     type = ADComputeIsotropicElasticityTensor
     youngs_modulus = 210e3
@@ -60,12 +59,22 @@
     type = ADComputeDegradationFunction
     variable = phi
   []
-  [stress]
-    type = ADComputeElasticPFFStress
+  [degradationparsed]
+    type = ADDerivativeParsedMaterial
+    property_name = degradation
+    coupled_variables = 'phi'
+    expression = '(1.0-phi)^2*(1.0 - eta) + eta'
+    constant_names       = 'eta'
+    constant_expressions = '1e-8'
+    derivative_order = 1
   []
-  [driving_force]
-    type = ADComputePFFDrivingForce
-    Gc = 1.0
+  [drivingforceparsed]
+    type = ADParsedMaterial
+    property_name = crack_driving_force
+    constant_names = 'gc'
+    constant_expressions = '1.0'
+    material_property_names = 'strain_energy dg:=D[degradation,phi]'
+    expression = 'dg * strain_energy / gc'
   []
 []
 

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "ADComputeElasticPFFStress.h"
 #include "RankTwoTensor.h"
 #include "RankFourTensor.h"
@@ -28,7 +29,9 @@ ADComputeElasticPFFStress::ADComputeElasticPFFStress(
 
   _degradation(getOptionalADMaterialProperty<Real>("degradation_name")),
 
-  _strain_energy(declareADProperty<Real>("strain_energy_name"))
+  _strain_energy(declareADProperty<Real>("strain_energy_name")),
+
+  _strain_energy_old(getMaterialPropertyOld<Real>("strain_energy_name"))
 {
 }
 
@@ -52,5 +55,7 @@ ADComputeElasticPFFStress::computeQpStress()
 
   // Elastic strain energy
   _strain_energy[_qp] = 0.5 * _stress[_qp].doubleContraction(_elastic_strain[_qp])
-    / (_degradation[_qp]+ 1e-8) ;
+    / (_degradation[_qp]+ 1e-7);
+
+  _strain_energy[_qp] = std::max(_strain_energy[_qp], _strain_energy_old[_qp]);
 }
