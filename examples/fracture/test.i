@@ -57,7 +57,7 @@
     poissons_ratio = 0.3
   []
   [degradation]
-    type = ADComputeDegradation
+    type = ADComputeDegradationFunction
     variable = phi
   []
   [stress]
