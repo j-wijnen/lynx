@@ -1,27 +1,13 @@
 [GlobalParams]
   displacements = 'disp_x disp_y'
   end_time = 1.0
-  dt = 0.01
-  #family = lagrange
-  #order = first
+  dt = 0.5
+  family = lagrange
+  order = second
 []
 
 [Mesh]
-  [generated]
-    type = GeneratedMeshGenerator
-    dim = 2
-    nx = 1
-    ny = 1
-    xmax = 1
-    ymax = 1
-  []
-  [leftbottom]
-    type = BoundingBoxNodeSetGenerator
-    new_boundary = leftbottom
-    bottom_left = '-0.5 -0.5 0.0'
-    top_right = '0.5 0.5 0'
-    input = generated
-  []
+  file = test.msh
 []
 
 [Variables]
@@ -44,7 +30,7 @@
   [phinonlocal]
     type = ADPhaseFieldFracture
     variable = phi
-    length_scale = 10
+    length_scale = 0.4
   []
 []
 
@@ -73,25 +59,31 @@
     [right]
         type = LinearRampDirichletBC
         variable = disp_x
-        boundary = right
-        value = 0.005
+        boundary = Right
+        value = 0.1
     []
     [left]
         type = DirichletBC
         variable = disp_x
-        boundary = left
+        boundary = Left
         value = 0.
     []
     [bottomleft]
         type = DirichletBC
         variable = disp_y
-        boundary = leftbottom
+        boundary = LeftBottom
         value = 0.
     []
 []
 
 [Problem]
   type = FEProblem
+[]
+
+[Preconditioning]
+[smp]
+  type = SMP
+[]
 []
 
 [Executioner]
@@ -106,4 +98,9 @@
 
 [Outputs]
   exodus = true
+  print_linear_residuals = true
+[]
+
+[Debug]
+  show_var_residual_norms = true
 []

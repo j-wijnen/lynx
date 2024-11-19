@@ -38,6 +38,7 @@ ADPhaseFieldFracture::computeQpResidual()
   //       + Gc*lc * matmul(transpose(dNdx), phigrad) &
   //     )
 
-  return _test[_i][_qp] * (_u[_qp] / _length_scale + _crack_driving_force[_qp])  
+  return _test[_i][_qp] * (_u[_qp] / _length_scale + _crack_driving_force[_qp]) ; 
     + _length_scale * _grad_test[_i][_qp] * _grad_u[_qp];
+
 }

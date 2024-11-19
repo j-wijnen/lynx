@@ -1,17 +1,17 @@
 #pragma once
 
-#include "ADComputeLinearElasticStress.h"
+#include "ComputeLinearElasticStress.h"
 
 /**
- * ADComputeElasticPFFStress computes the degraded stress following linear elasticity theory (small
+ * ComputeElasticPFFStress computes the degraded stress following linear elasticity theory (small
  * strains) and corresponding strain energy for phase field fracture modelling
  */
-class ADComputeElasticPFFStress : public ADComputeLinearElasticStress
+class ComputeElasticPFFStress : public ComputeLinearElasticStress
 {
 public:
   static InputParameters validParams();
 
-  ADComputeElasticPFFStress(const InputParameters & parameters);
+  ComputeElasticPFFStress(const InputParameters & parameters);
 
   virtual void initialSetup() override;
 
@@ -22,10 +22,10 @@ protected:
   virtual void computeQpStress() override;
 
   // Consumed properties
-  const OptionalADMaterialProperty<Real> & _degradation;
+  //const OptionalMaterialProperty<Real> & _degradation;
 
   // Declared properteis
-  ADMaterialProperty<Real> & _strain_energy;
+  MaterialProperty<Real> & _strain_energy;
 
   // Stateful properties
   const MaterialProperty<Real> & _strain_energy_old;

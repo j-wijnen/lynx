@@ -1,7 +1,7 @@
 [GlobalParams]
   displacements = 'disp_x disp_y'
   end_time = 1.0
-  dt = 0.01
+  dt = 0.5
   #family = lagrange
   #order = first
 []
@@ -44,7 +44,7 @@
   [phinonlocal]
     type = ADPhaseFieldFracture
     variable = phi
-    length_scale = 10
+    length_scale = 0.4
   []
 []
 
@@ -54,6 +54,9 @@
     type = ADComputeIsotropicElasticityTensor
     youngs_modulus = 210e3
     poissons_ratio = 0.3
+  []
+  [stress]
+    type = ADComputeElasticPFFStress
   []
   [degradation]
     type = ADComputeDegradationFunction
