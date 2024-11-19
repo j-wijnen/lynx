@@ -15,7 +15,7 @@ ADComputePFFDrivingForce::validParams()
   // Consumed property names
   params.addParam<MaterialPropertyName>("degradation_name", "degradation",
                                         "The name of the material degradation property.");
-  params.addParam<MaterialPropertyName>("d_degradation_name", "d_degradation",
+  params.addParam<MaterialPropertyName>("ddegradationdphi_name", "ddegradationdphi",
                                         "The name of the derivative of the material degradation property.");
   params.addParam<MaterialPropertyName>("strain_energy_name", "strain_energy",
                                         "The name of the material degradation property.");
@@ -33,7 +33,7 @@ ADComputePFFDrivingForce::ADComputePFFDrivingForce(
 
   _gc(getParam<Real>("Gc")),
 
-  _d_degradation(getADMaterialProperty<Real>("d_degradation_name")),
+  _ddegradationdphi(getADMaterialProperty<Real>("ddegradationdphi_name")),
   _strain_energy(getADMaterialProperty<Real>("strain_energy_name")),
 
   _crack_driving_force(declareADProperty<Real>("crack_driving_force_name"))
@@ -43,5 +43,5 @@ ADComputePFFDrivingForce::ADComputePFFDrivingForce(
 void
 ADComputePFFDrivingForce::computeQpProperties()
 {
-  _crack_driving_force[_qp] = _d_degradation[_qp] * _strain_energy[_qp] / _gc;
+  _crack_driving_force[_qp] = _ddegradationdphi[_qp] * _strain_energy[_qp] / _gc;
 }

@@ -14,11 +14,11 @@ ADComputeDegradationFunction::validParams()
   // Declared property names
   params.addParam<MaterialPropertyName>("degradation_name", "degradation",
                                         "The name of the material degradation property.");
-  params.addParam<MaterialPropertyName>("d_degradation_name", "d_degradation",
+  params.addParam<MaterialPropertyName>("ddegradationdphi_name", "ddegradationdphi",
                                         "The name of the derivative of the material degradation property.");
 
   // Parameters
-  params.addParam<Real>("epsilon", 1e-8, "Constant for numerical stability.");
+  params.addParam<Real>("epsilon", 1e-7, "Constant for numerical stability.");
 
   return params;
 }
@@ -31,7 +31,7 @@ ADComputeDegradationFunction::ADComputeDegradationFunction(
   _phi(adCoupledValue("variable")),
 
   _degradation(declareADProperty<Real>("degradation_name")),
-  _d_degradation(declareADProperty<Real>("d_degradation_name")),
+  _ddegradationdphi(declareADProperty<Real>("ddegradationdphi_name")),
 
   _epsilon(getParam<Real>("epsilon"))
 {
@@ -40,6 +40,6 @@ ADComputeDegradationFunction::ADComputeDegradationFunction(
 void
 ADComputeDegradationFunction::computeQpProperties()
 {
-  _degradation[_qp] = (1.0  - _phi[_qp]) * (1.0 - _phi[_qp]) + _epsilon;
-  _d_degradation[_qp] = -2.0 * (1.0 - _phi[_qp]);
+  _degradation[_qp] = (1.0  - _phi[_qp]) * (1.0 - _phi[_qp]) * (1.0 - _epsilon) + _epsilon;
+  _ddegradationdphi[_qp] = -2.0 * (1.0 - _phi[_qp]) * (1.0 - _epsilon);
 }

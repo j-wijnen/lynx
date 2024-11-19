@@ -22,7 +22,7 @@ protected:
   const Real _gc;
 
   // Consumed properties
-  const ADMaterialProperty<Real> & _d_degradation,
+  const ADMaterialProperty<Real> & _ddegradationdphi,
                                  & _strain_energy;
 
   // Declared properteis

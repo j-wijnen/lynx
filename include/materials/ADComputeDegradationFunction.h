@@ -22,7 +22,7 @@ protected:
 
   // Declared properteis
   ADMaterialProperty<Real> & _degradation,
-                           & _d_degradation;
+                           & _ddegradationdphi;
 
   // Parameters
   Real _epsilon;
