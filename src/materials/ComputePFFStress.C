@@ -1,15 +1,15 @@
 #include <algorithm>
-#include "ADComputeElasticPFFStress.h"
+#include "ComputePFFStress.h"
 #include "RankTwoTensor.h"
 #include "RankFourTensor.h"
 
 
-registerMooseObject("SolidMechanicsApp", ADComputeElasticPFFStress);
+registerMooseObject("SolidMechanicsApp", ComputePFFStress);
 
 InputParameters
-ADComputeElasticPFFStress::validParams()
+ComputePFFStress::validParams()
 {
-  InputParameters params = ADComputeLinearElasticStress::validParams();
+  InputParameters params = ComputeStressBase::validParams();
   params.addClassDescription("Compute phase-field fracture stress using elasticity for small strains");
   
   // Consumed property names
@@ -22,48 +22,46 @@ ADComputeElasticPFFStress::validParams()
   return params;
 }
 
-ADComputeElasticPFFStress::ADComputeElasticPFFStress(
+ComputePFFStress::ComputePFFStress(
     const InputParameters & parameters
 )
-  : ADComputeLinearElasticStress(parameters),
+  : ComputeStressBase(parameters),
 
-  _degradation(getOptionalADMaterialProperty<Real>("degradation_name")),
+  // Consumed properties
+  _elasticity_tensor(getMaterialProperty<RankFourTensor>(_base_name + "elasticity_tensor")),
+  _degradation(getOptionalMaterialProperty<Real>("degradation_name")),
 
-  _strain_energy(declareADProperty<Real>("strain_energy_name")),
+  // Declared properties
+  _strain_energy(declareProperty<Real>("strain_energy_name")),
 
+  // Stateful properties
   _strain_energy_old(getMaterialPropertyOld<Real>("strain_energy_name"))
 {
 }
 
-void
-ADComputeElasticPFFStress::initialSetup()
-{
-  ADComputeLinearElasticStress::initialSetup();
-}
 
 void
-ADComputeElasticPFFStress::initQpStatefulProperties()
+ComputePFFStress::initQpStatefulProperties()
 {
   _strain_energy[_qp] = 0.0;
 }
 
+
 void
-ADComputeElasticPFFStress::computeQpStress()
+ComputePFFStress::computeQpStress()
 {
   // Obtain degradation functions
-  ADReal degradation = _degradation[_qp] ? _degradation[_qp] : 1.0;
+  Real degradation = _degradation[_qp] ? _degradation[_qp] : 1.0;
 
   // Assign value for elastic strain, which is equal to the mechanical strain
   _elastic_strain[_qp] = _mechanical_strain[_qp];
 
-  // stress = C * e
-  _stress[_qp] = degradation * _elasticity_tensor[_qp] * _mechanical_strain[_qp];;
+  // stress and jacobian
+  _stress[_qp] = degradation * _elasticity_tensor[_qp] * _mechanical_strain[_qp];
 
-  // Elastic strain energy
-  _strain_energy[_qp] = 0.5 * _stress[_qp].doubleContraction(_elastic_strain[_qp])
-    / (_degradation[_qp]+ 1e-7);
+  _Jacobian_mult[_qp] = _elasticity_tensor[_qp];
 
+  // strain energy
   _strain_energy[_qp] = 0.5 * (_elasticity_tensor[_qp] * _mechanical_strain[_qp]).doubleContraction(_mechanical_strain[_qp]); 
-
   _strain_energy[_qp] = std::max(_strain_energy[_qp], _strain_energy_old[_qp]);
 }

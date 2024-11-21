@@ -1,9 +1,7 @@
 [GlobalParams]
   displacements = 'disp_x disp_y'
   end_time = 1.0
-  dt = 0.5
-  #family = lagrange
-  #order = first
+  dt = 0.01
 []
 
 [Mesh]
@@ -49,7 +47,6 @@
 []
 
 [Materials]
-  active = 'elasticity stress degradationparsed drivingforceparsed'
   [elasticity]
     type = ADComputeIsotropicElasticityTensor
     youngs_modulus = 210e3
@@ -59,10 +56,6 @@
     type = ADComputeElasticPFFStress
   []
   [degradation]
-    type = ADComputeDegradationFunction
-    variable = phi
-  []
-  [degradationparsed]
     type = ADDerivativeParsedMaterial
     property_name = degradation
     coupled_variables = 'phi'
@@ -71,7 +64,7 @@
     constant_expressions = '1e-8'
     derivative_order = 1
   []
-  [drivingforceparsed]
+  [drivingforce]
     type = ADParsedMaterial
     property_name = crack_driving_force
     constant_names = 'gc'
@@ -86,7 +79,7 @@
         type = LinearRampDirichletBC
         variable = disp_x
         boundary = right
-        value = 0.005
+        value = 0.02
     []
     [left]
         type = DirichletBC
@@ -106,6 +99,12 @@
   type = FEProblem
 []
 
+[Preconditioning]
+  [smp]
+    type = SMP
+  []
+[]
+
 [Executioner]
   type = Transient
   solve_type = "NEWTON"
@@ -113,9 +112,11 @@
   petsc_options_value = 'lu mumps'
   l_tol = 1e-8
   nl_abs_tol = 1e-6
-  nl_rel_tol = 1e-2
+  nl_rel_tol = 1e-4
+  line_search = none
 []
 
 [Outputs]
+  print_linear_residuals=false
   exodus = true
 []

@@ -31,14 +31,7 @@ ADPhaseFieldFracture::ADPhaseFieldFracture(
 ADReal
 ADPhaseFieldFracture::computeQpResidual()
 {
-
-
-  // rhs(kdp1:kdp2,1) = rhs(kdp1:kdp2,1) - dvol * ( &
-  //       Ns * (Gc/lc*phi + dg*H) &
-  //       + Gc*lc * matmul(transpose(dNdx), phigrad) &
-  //     )
-
-  return _test[_i][_qp] * (_u[_qp] / _length_scale + _crack_driving_force[_qp]) ; 
+  return _test[_i][_qp] * (_u[_qp] / _length_scale + _crack_driving_force[_qp]) 
     + _length_scale * _grad_test[_i][_qp] * _grad_u[_qp];
 
 }
