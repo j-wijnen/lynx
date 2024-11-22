@@ -30,26 +30,33 @@
   []
 []
 
-[Variables]
-  [phi]
+[AuxVariables]
+  [degradation]
+    family = monomial
+    order = first
     initial_condition = 0.0
   []
-[]
-
-[AuxVariables]
-  [bounds_dummy]
+  [strain_energy]
+   family = monomial
+   order = first
   []
 []
 
-[Kernels]
-  [phinonlocal]
-    type = PhaseFieldFracture
-    variable = phi
-    length_scale = 1.5
+[AuxKernels]
+  [strain_energy_coupling]
+    type = MaterialRealAux
+    property = strain_energy
+    variable = strain_energy
+    execute_on = TIMESTEP_END
   []
 []
 
 [Materials]
+  [strain_energy]
+    type = MaterialFromVariable
+    property = degradation
+    variable = degradation
+  []
   [elasticity]
     type = ComputeIsotropicElasticityTensor
     youngs_modulus = 210e3
@@ -57,15 +64,6 @@
   []
   [stress]
     type = ComputePFFStress
-  []
-  [degradation]
-    type = ComputeDegradationFunction
-    variable = phi
-  []
-  [driving_force]
-    type = ComputePFFDrivingForce
-    variable = phi
-    Gc = 2.5
   []
 []
 
@@ -90,22 +88,6 @@
     []
 []
 
-[Bounds]
-  [./upper]
-    type = ConstantBounds
-    variable = bounds_dummy
-    bounded_variable = phi
-    bound_type = upper
-    bound_value = 1
-  [../]
-  [./lower]
-    type = VariableOldValueBounds
-    variable = bounds_dummy
-    bounded_variable = phi
-    bound_type = lower
-  [../]
-[]
-
 [Preconditioning]
   [smp]
     type = SMP
@@ -122,9 +104,35 @@
   nl_abs_tol = 1e-6
   nl_rel_tol = 1e-4
   line_search = none
+  fixed_point_max_its = 1000
+  fixed_point_min_its = 1
 []
+
 
 [Outputs]
   exodus = true
   print_linear_residuals=false
+[]
+
+[MultiApps]
+  [damage]
+    type = TransientMultiApp
+    input_files = 'test_picard_sub.i'
+    execute_on = timestep_begin
+  []
+[]
+
+[Transfers]
+  [push_crack_driving_force]
+    type = MultiAppCopyTransfer
+    to_multi_app = damage
+    source_variable = 'strain_energy'
+    variable = 'strain_energy'
+  []
+  [pull_phi]
+    type = MultiAppCopyTransfer
+    from_multi_app = damage
+    source_variable = 'degradation'
+    variable = 'degradation'
+  []
 []

@@ -1,0 +1,15 @@
+[Tests]
+  design = 'PhaseFieldFracture.md'
+  [test]
+    type = 'Exodiff'
+    input = 'homogeneous.i'
+    exodiff = 'homogeneous_out.e'
+    requirement = 'The system shall be able to solve a homogeneous phase field fracture problem.'
+  []
+  [ADtest]
+    type = 'Exodiff'
+    input = 'ADhomogeneous.i'
+    exodiff = 'ADhomogeneous_out.e'
+    requirement = 'The system shall be able to solve a homogeneous phase field fracture problem with AD.'
+  []
+[]

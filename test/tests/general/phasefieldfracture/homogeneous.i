@@ -36,11 +36,6 @@
   []
 []
 
-[AuxVariables]
-  [bounds_dummy]
-  []
-[]
-
 [Kernels]
   [phinonlocal]
     type = PhaseFieldFracture
@@ -88,22 +83,6 @@
         boundary = leftbottom
         value = 0.
     []
-[]
-
-[Bounds]
-  [./upper]
-    type = ConstantBounds
-    variable = bounds_dummy
-    bounded_variable = phi
-    bound_type = upper
-    bound_value = 1
-  [../]
-  [./lower]
-    type = VariableOldValueBounds
-    variable = bounds_dummy
-    bounded_variable = phi
-    bound_type = lower
-  [../]
 []
 
 [Preconditioning]
