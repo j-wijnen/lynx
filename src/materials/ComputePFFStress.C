@@ -59,7 +59,7 @@ ComputePFFStress::computeQpStress()
   // stress and jacobian
   _stress[_qp] = degradation * _elasticity_tensor[_qp] * _mechanical_strain[_qp];
 
-  _Jacobian_mult[_qp] = _elasticity_tensor[_qp];
+  _Jacobian_mult[_qp] = degradation * _elasticity_tensor[_qp];
 
   // strain energy
   _strain_energy[_qp] = 0.5 * (_elasticity_tensor[_qp] * _mechanical_strain[_qp]).doubleContraction(_mechanical_strain[_qp]); 

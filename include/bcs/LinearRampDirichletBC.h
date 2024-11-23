@@ -19,7 +19,7 @@ protected:
 private:
 
   // value and time at which value should be satisfied
-  Real _value, _end_time;
+  Real _value, _end_time, _start_time;
 
   // Variable from previous timestep
   const VariableValue & _u_old;

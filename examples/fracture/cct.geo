@@ -23,13 +23,14 @@ Curve Loop(1) = {5, 1, 2, 3, 4};
 //+
 Plane Surface(1) = {1};
 //+
-Physical Surface("Material", 6) = {1};
+Physical Surface("Material") = {1};
 //+
-Physical Curve("Left", 7) = {5};
+Physical Curve("Left") = {5};
 //+
-Physical Curve("Top", 8) = {4};
+Physical Curve("Top") = {4};
 //+
-Physical Curve("Bottom", 9) = {2};
+Physical Curve("Crack") = {1};
+Physical Curve("Bottom") = {2};
 
 Physical Point("CrackTip") = {2};
 

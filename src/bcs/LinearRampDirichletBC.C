@@ -13,6 +13,7 @@ LinearRampDirichletBC::validParams()
 
   params.addRequiredParam<Real>("value", "Value to be described");
   params.addRequiredParam<Real>("end_time", "Time at which the condition should be satisfied");
+  params.addParam<Real>("start_time", 0.0, "Start time of increase. Before this time the value is kept constant.");
 
   return params;
 }
@@ -24,6 +25,7 @@ LinearRampDirichletBC::LinearRampDirichletBC(
   : NodalBC(params),
     _value(getParam<Real>("value")),
     _end_time(getParam<Real>("end_time")),
+    _start_time(getParam<Real>("start_time")),
     _u_old(valueOld())
 {
 }
@@ -32,8 +34,10 @@ LinearRampDirichletBC::LinearRampDirichletBC(
 Real
 LinearRampDirichletBC::computeQpResidual()
 {
-  // Apply constant value after end time is reached
-  if( _t >= _end_time )
+  // Apply constant value before/after start/end time
+  if(_t <= _start_time)
+    return _u[_qp] - _u_old[_qp];
+  else if(_t >= _end_time)
     return _u[_qp] - _value;
 
   // Linear ramp to value
