@@ -1,7 +1,7 @@
 //+
 Point(1) = {0, 0, 0, 1.0};
 //+
-Point(2) = {1.25, 0, 0, 1.0};
+Point(2) = {2.56, 0, 0, 1.0};
 //+
 Point(3) = {5, 0, 0, 1.0};
 //+
@@ -19,7 +19,7 @@ Line(4) = {4, 5};
 //+
 Line(5) = {5, 1};
 //+
-Curve Loop(1) = {5, 1, 2, 3, 4};
+Curve Loop(1) = {1, 2, 3, 4, 5};
 //+
 Plane Surface(1) = {1};
 //+
@@ -34,19 +34,22 @@ Physical Curve("Bottom") = {2};
 
 Physical Point("CrackTip") = {2};
 
-Recombine Surface{1};
-
 // We could also use a `Box' field to impose a step change in element sizes
 // inside a box
 Field[1] = Box;
-Field[1].VIn = 0.06;
+Field[1].VIn = 0.03;
 Field[1].VOut = 1.0;
 Field[1].XMin = 0.0;
 Field[1].XMax = 5.0;
 Field[1].YMin = 0.0;
-Field[1].YMax = 2.5;
+Field[1].YMax = 1.0;
 
 Background Field = 1;
 
 Mesh.ElementOrder = 2;
-Mesh.SecondOrderIncomplete = 1;
+Mesh.SecondOrderIncomplete = 2;
+
+
+Mesh.RecombinationAlgorithm = 1;
+Mesh.Algorithm = 5;  // 5 or 8:
+//Recombine Surface {:};
