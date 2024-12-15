@@ -278,7 +278,7 @@ SSPTSteel::austeniteTransformation()
 {
   // Split increment if only partially in temperature range
   Real temp, dt;
-  std::tie(temp, dt) = splitIncrement(austenite);
+  std::tie(temp, dt) = splitIncrementCooldown(austenite);
 
   Real x_eq, tau;
   if( temp <= _temp_Ae3 )
@@ -301,7 +301,7 @@ SSPTSteel::grainGrowth()
 {
   // Split increment if only partially in temperature range
   Real temp, dt;
-  std::tie(temp, dt) = splitIncrement(austenite);
+  std::tie(temp, dt) = splitIncrementCooldown(austenite);
 
   return dt * 10.0e8 * exp(-22853.0/(temp+273.15)) 
     * (1.0/_Gsize_old[_qp] - 1.0/_Gsize_max);
@@ -316,7 +316,7 @@ SSPTSteel::diffusiveTransformation(
 )
 {
   Real temp, dt;
-  std::tie(temp, dt) = splitIncrement(phase);
+  std::tie(temp, dt) = splitIncrementHeating(phase);
 
   Real fun_tc = funTc(phase, temp),
        dnuc = 0.0,
@@ -450,54 +450,57 @@ SSPTSteel::checkTemperatureRange(
 
 
 std::tuple<Real,Real> 
-SSPTSteel::splitIncrement(
+SSPTSteel::splitIncrementHeating(
   Phase phase
 )
 {
   Real temp, dt;
 
-  // Temperature increase
-  if( _temp[_qp] > _temp_old[_qp] )
+  // Lower bound
+  if( _temp_old[_qp] < _temp_lower[phase] )
   {
-    // Lower bound
-    if( _temp_old[_qp] < _temp_lower[phase] )
-    {
-      temp = _temp[_qp];
-      dt = (_temp[_qp] - _temp_lower[phase]) / (_temp[_qp] - _temp_old[_qp]) * _dt;
-    }
-    // Upper bound
-    else if( _temp[_qp] > _temp_upper[phase] )
-    {
-      temp = _temp_upper[phase];
-      dt = (_temp_upper[phase] - _temp_old[_qp]) / (_temp[_qp] - _temp_old[_qp]) * _dt;
-    }
-    else
-    {
-      temp = _temp[_qp];
-      dt = _dt;
-    }
+    temp = _temp[_qp];
+    dt = (_temp[_qp] - _temp_lower[phase]) / (_temp[_qp] - _temp_old[_qp]) * _dt;
   }
-
-  // Temperature decrase
+  // Upper bound
+  else if( _temp[_qp] > _temp_upper[phase] )
+  {
+    temp = _temp_upper[phase];
+    dt = (_temp_upper[phase] - _temp_old[_qp]) / (_temp[_qp] - _temp_old[_qp]) * _dt;
+  }
   else
   {
-    // Upper bound
-    if( _temp_old[_qp] > _temp_upper[phase] )
-    {
-      temp = _temp[_qp];
-      dt = (_temp_upper[phase] - _temp[_qp]) / (_temp_old[_qp] - _temp[_qp]) * _dt;
-    }
-    // Lower bound
-    else if( _temp[_qp] < _temp_lower[phase] )
-    {
-      temp = _temp_lower[phase];
-      dt = (_temp_old[_qp] - _temp_lower[phase]) / (_temp_old[_qp] - _temp[_qp]) * _dt;
-    }
-    else
-    {
-      temp = _temp[_qp];
-      dt = _dt;
-    }
+    temp = _temp[_qp];
+    dt = _dt;
+  }
+
+  return {temp, dt};
+}
+
+
+std::tuple<Real,Real> 
+SSPTSteel::splitIncrementCooldown(
+  Phase phase
+)
+{
+  Real temp, dt;
+
+  // Upper bound
+  if( _temp_old[_qp] > _temp_upper[phase] )
+  {
+    temp = _temp[_qp];
+    dt = (_temp_upper[phase] - _temp[_qp]) / (_temp_old[_qp] - _temp[_qp]) * _dt;
+  }
+  // Lower bound
+  else if( _temp[_qp] < _temp_lower[phase] )
+  {
+    temp = _temp_lower[phase];
+    dt = (_temp_old[_qp] - _temp_lower[phase]) / (_temp_old[_qp] - _temp[_qp]) * _dt;
+  }
+  else
+  {
+    temp = _temp[_qp];
+    dt = _dt;
   }
 
   return {temp, dt};

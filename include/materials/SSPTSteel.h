@@ -2,8 +2,6 @@
 
 #include "Material.h"
 
-#include "LinearInterpolation.h"
-
 // Use enum to index/loop phases
 enum Phase {
   ferrite,
@@ -24,7 +22,6 @@ const std::array<Phase,5> phases = {
 // SSPTSteel model definition
 class SSPTSteel : public Material 
 {
-
 public:
 
   static InputParameters validParams();
@@ -35,6 +32,7 @@ public:
 
 protected:
 
+  // Compute quadrature point properties
   virtual void initQpStatefulProperties() override;
 
   virtual void computeQpProperties() override;
@@ -72,7 +70,9 @@ protected:
 
   // Reduces the time increment to be between lower and upper bounds
   // returns (T_split, dt_split)
-  std::tuple<Real,Real> splitIncrement(Phase phase);
+  std::tuple<Real,Real> splitIncrementHeating(Phase phase);
+
+  std::tuple<Real,Real> splitIncrementCooldown(Phase phase);
 
   // Coupled variables
   const VariableValue & _temp, 
@@ -137,7 +137,7 @@ protected:
 
   // Phase dependent constants
   const std::array<Real,3> _Gsize_factor = {0.41, 0.32, 0.29};
-  std::array<int,3> _ucool_exponent = {3, 3, 2};
+  const std::array<int,3> _ucool_exponent = {3, 3, 2};
 
   // Misc. constants
   const Real _tolerance = 1e-4;
