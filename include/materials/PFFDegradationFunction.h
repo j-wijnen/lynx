@@ -6,26 +6,26 @@
 /**
  * Compute material degradation functions based on the damage parameter
  */
-class ComputeDegradationFunction : public DerivativeMaterialInterface<Material>
+class PFFDegradationFunction : public DerivativeMaterialInterface<Material>
 {
 public:
 
   static InputParameters validParams();
 
-  ComputeDegradationFunction(const InputParameters & parameters);
+  PFFDegradationFunction(const InputParameters & parameters);
 
 protected:
 
   virtual void computeQpProperties() override;
 
   // Coupled damage variable
-  const std::string _phi_name;
-  const VariableValue & _phi;
+  const std::string _u_name;
+  const VariableValue & _u;
 
   // Declared properteis
-  MaterialProperty<Real> & _degradation,
-                         & _ddegradationdphi,
-                         & _d2degradationd2phi;
+  MaterialProperty<Real> & _g,
+                         & _dg_du,
+                         & _d2g_du2;
 
   // Parameters
   Real _epsilon;

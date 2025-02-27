@@ -37,7 +37,7 @@ Physical Point("CrackTip") = {2};
 // We could also use a `Box' field to impose a step change in element sizes
 // inside a box
 Field[1] = Box;
-Field[1].VIn = 0.03;
+Field[1].VIn = 0.1;
 Field[1].VOut = 1.0;
 Field[1].XMin = 0.0;
 Field[1].XMax = 5.0;
@@ -46,7 +46,7 @@ Field[1].YMax = 1.0;
 
 Background Field = 1;
 
-Mesh.ElementOrder = 2;
+Mesh.ElementOrder = 1;
 Mesh.SecondOrderIncomplete = 2;
 
 

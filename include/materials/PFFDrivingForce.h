@@ -7,12 +7,12 @@
  * ComputeLinearElasticStress computes the stress following linear elasticity theory (small
  * strains)
  */
-class ComputePFFDrivingForce : public DerivativeMaterialInterface<Material>
+class PFFDrivingForce : public DerivativeMaterialInterface<Material>
 {
 public:
   static InputParameters validParams();
 
-  ComputePFFDrivingForce(const InputParameters & parameters);
+  PFFDrivingForce(const InputParameters & parameters);
 
 
 protected:
@@ -20,20 +20,17 @@ protected:
   virtual void computeQpProperties() override;
 
   // Coupled variables
-  const std::string _phi_name;
+  const std::string _u_name;
 
   // Consumed properties
   const std::string _degradation_name;
-  const MaterialProperty<Real> & _ddegradationdphi,
-                               & _d2degradationd2phi,
+  const MaterialProperty<Real> & _dg_du,
+                               & _d2g_du2,
                                & _strain_energy;
 
   // Declared properties
-  const std::string _crack_driving_force_name;
-  MaterialProperty<Real> & _crack_driving_force,
-                         & _dcrack_driving_force_dphi;
-
-  // Parameters
-  const Real _gc;
+  const std::string _pff_driving_force_name;
+  MaterialProperty<Real> & _pff_driving_force,
+                         & _dpff_driving_force_du;
 };
 

@@ -1,0 +1,6 @@
+[submodule "external/external/fastor"]
+	path = external/external/fastor
+	url = https://github.com/romeric/Fastor.git
+[submodule "external/fastor"]
+	path = external/fastor
+	url = https://github.com/romeric/Fastor.git

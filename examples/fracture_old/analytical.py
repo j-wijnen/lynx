@@ -1,4 +1,4 @@
-import exodus_reader
+import examples.pffracture.exodus_reader as exodus_reader
 import matplotlib.pyplot as plt
 import numpy as np
 

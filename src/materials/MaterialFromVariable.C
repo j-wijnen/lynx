@@ -1,6 +1,6 @@
 #include "MaterialFromVariable.h"
 
-registerMooseObject("SolidMechanicsApp", MaterialFromVariable);
+registerMooseObject("LynxApp", MaterialFromVariable);
 
 InputParameters
 MaterialFromVariable::validParams()

@@ -55,11 +55,12 @@ include $(MOOSE_DIR)/modules/modules.mk
 ###############################################################################
 
 # dep apps
-APPLICATION_DIR    := $(CURDIR)
-APPLICATION_NAME   := lynx
-BUILD_EXEC         := yes
-GEN_REVISION       := no
-include            $(FRAMEWORK_DIR)/app.mk
+APPLICATION_DIR     := $(CURDIR)
+APPLICATION_NAME    := lynx
+BUILD_EXEC          := yes
+GEN_REVISION        := no
+ADDITIONAL_INCLUDES += -Iexternal/fastor
+include             $(FRAMEWORK_DIR)/app.mk
 
 ###############################################################################
 # Additional special case targets should be added here

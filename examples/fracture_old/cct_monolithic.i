@@ -1,6 +1,6 @@
 [GlobalParams]
   displacements = 'disp_x disp_y'
-  end_time = 0.4
+  end_time = 0.2
 []
 
 [Mesh]
@@ -20,11 +20,6 @@
 [Variables]
   [phi]
     initial_condition = 0.0
-  []
-[]
-
-[AuxVariables]
-  [bounds_dummy]
   []
 []
 
@@ -56,41 +51,6 @@
   []
 []
 
-# [Kernels]
-#   [phinonlocal]
-#     type = ADPhaseFieldFracture
-#     variable = phi
-#     length_scale = 1.5
-#   []
-# []
-
-# [Materials]
-#   [elasticity]
-#     type = ADComputeIsotropicElasticityTensor
-#     youngs_modulus = 210e3
-#     poissons_ratio = 0.3
-#   []
-#   [stress]
-#     type = ADComputeElasticPFFStress
-#   []
-#   [degradation]
-#     type = ADDerivativeParsedMaterial
-#     property_name = degradation
-#     coupled_variables = 'phi'
-#     expression = '(1.0-phi)^2*(1.0 - eta) + eta'
-#     constant_names       = 'eta'
-#     constant_expressions = '1e-8'
-#     derivative_order = 1
-#   []
-#   [drivingforce]
-#     type = ADParsedMaterial
-#     property_name = crack_driving_force
-#     constant_names = 'gc'
-#     constant_expressions = '2.5'
-#     material_property_names = 'strain_energy dg:=D[degradation,phi]'
-#     expression = 'dg * strain_energy / gc'
-#   []
-# []
 
 [BCs]
     [top]
@@ -119,35 +79,25 @@
     []
 []
 
-[Bounds]
-  [./upper]
-    type = ConstantBounds
-    variable = bounds_dummy
-    bounded_variable = phi
-    bound_type = upper
-    bound_value = 1
-  [../]
-  [./lower]
-    type = VariableOldValueBounds
-    variable = bounds_dummy
-    bounded_variable = phi
-    bound_type = lower
-  [../]
-[]
-
 [Executioner]
   type = Transient
-  dt = 0.0004
+  #dt = 0.0004
+  num_steps = 500
   solve_type = "NEWTON"
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_type -snes_type'
-  petsc_options_value = 'lu mumps vinewtonssls'
+  petsc_options = ''
+  petsc_options_iname = '-pc_type -pc_factor_mat_solver_type -snes_linesearch_minlambda'
+  petsc_options_value = 'lu mumps 0.1'
   #petsc_options_iname = '-pc_type -pc_hypre_type'
   #petsc_options_value = 'hypre boomeramg'
-  l_tol = 1e-8
-  nl_abs_tol = 1e-3
-  nl_rel_tol = 1e-3
-  line_search = none
-  nl_max_its = 5000
+  l_tol = 1e-10
+  nl_abs_tol = 1e-8
+  nl_rel_tol = 1e-4
+  nl_abs_div_tol = 1e+50
+  nl_div_tol = 1e+50
+  line_search = basic
+  nl_max_its = 50000
+  automatic_scaling = true 
+  compute_scaling_once = false
 []
 
 [Outputs]
