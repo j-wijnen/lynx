@@ -1,4 +1,4 @@
-export MOOSE_JOBS=12
+export MOOSE_JOBS=1
 export METHOD=opt
 
 export CFLAGS='-O2 -march=native' 
