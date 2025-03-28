@@ -1,12 +1,12 @@
 #pragma once
 
-#include "NodalBC.h"
+#include "DirichletBCBase.h"
 
 /*  Linearly increases from the current value to
  *  the prescribed value at the given time
  */
 
-class LinearRampDirichletBC : public NodalBC
+class LinearRampDirichletBC : public DirichletBCBase
 {
 public:
   static InputParameters validParams();
@@ -14,12 +14,12 @@ public:
   LinearRampDirichletBC(const InputParameters & params);
 
 protected:
-  virtual Real computeQpResidual() override;
+  virtual Real computeQpValue() override;
 
 private:
 
   // value and time at which value should be satisfied
-  Real _value, _end_time, _start_time;
+  Real _value, _start_time, _end_time;
 
   // Variable from previous timestep
   const VariableValue & _u_old;

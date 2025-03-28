@@ -44,7 +44,10 @@ PFFDegradationFunction::PFFDegradationFunction(
 void
 PFFDegradationFunction::computeQpProperties()
 {
-  _g[_qp] = (1.0  - _u[_qp]) * (1.0 - _u[_qp]) * (1.0 - _epsilon) + _epsilon;
-  _dg_du[_qp] = -2.0 * (1.0 - _u[_qp]) * (1.0 - _epsilon);
-  _d2g_du2[_qp] =  2.0 * (1.0 - _epsilon);
+  Real u_term = (1.0 - _u[_qp]);
+  Real e_term = (1.0 - _epsilon);
+
+  _g[_qp] = u_term * u_term * e_term + _epsilon;
+  _dg_du[_qp] = -2.0 * u_term * e_term;
+  _d2g_du2[_qp] =  2.0 * e_term;
 }

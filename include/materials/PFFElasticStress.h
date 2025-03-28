@@ -27,8 +27,8 @@ protected:
   const OptionalMaterialProperty<Real> & _g;
 
   // Declared properteis
-  MaterialProperty<Real> & _strain_energy;
+  MaterialProperty<Real> & _pff_energy;
 
   // Stateful properties
-  const MaterialProperty<Real> & _strain_energy_old;
+  const MaterialProperty<Real> & _pff_energy_old;
 };

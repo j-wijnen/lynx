@@ -16,8 +16,8 @@ PFFElasticStress::validParams()
                                         "The name of the material degradation property.");
 
   // Declared property names
-  params.addParam<MaterialPropertyName>("strain_energy_name", "strain_energy",
-                                        "The name of the material degradation property.");
+  params.addParam<MaterialPropertyName>("pff_energy_name", "pff_energy",
+                                        "The name of the energy driving fracture.");
   return params;
 }
 
@@ -31,17 +31,17 @@ PFFElasticStress::PFFElasticStress(
   _g(getOptionalMaterialProperty<Real>("pff_degradation_name")),
 
   // Declared properties
-  _strain_energy(declareProperty<Real>("strain_energy_name")),
+  _pff_energy(declareProperty<Real>("pff_energy_name")),
 
   // Stateful properties
-  _strain_energy_old(getMaterialPropertyOld<Real>("strain_energy_name"))
+  _pff_energy_old(getMaterialPropertyOld<Real>("pff_energy_name"))
 {
 }
 
 void
 PFFElasticStress::initQpStatefulProperties()
 {
-  _strain_energy[_qp] = 0.0;
+  _pff_energy[_qp] = 0.0;
 }
 
 void
@@ -56,8 +56,8 @@ PFFElasticStress::computeQpStress()
   _Jacobian_mult[_qp] = g * _elasticity_tensor[_qp];
 
   // strain energy
-  _strain_energy[_qp] = std::max(
+  _pff_energy[_qp] = std::max(
     0.5 * (_elasticity_tensor[_qp] * _mechanical_strain[_qp]).doubleContraction(_mechanical_strain[_qp]),
-    _strain_energy_old[_qp]
+    _pff_energy_old[_qp]
   ); 
 }

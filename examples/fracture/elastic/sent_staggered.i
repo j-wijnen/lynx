@@ -1,19 +1,20 @@
 [GlobalParams]
   displacements = 'disp_x disp_y'
-  end_time = 0.2
-  dt = 0.002
-  order = first
+  end_time = 1.0
+  dt = 0.01
+  order = second
 []
 
 [Mesh]
-  file = sent.msh
+  file = '../mesh/sent.msh'
 []
 
 [Physics/SolidMechanics/QuasiStatic]
   [all]
     strain = small
     add_variables = true
-    generate_output = 'stress_yy strain_yy'
+    generate_output = 'stress_yy strain_yy vonmises_stress'
+    save_in = 'force_x force_y'
   []
 []
 
@@ -21,16 +22,22 @@
   [damage]
     family = lagrange
   []
-  [strain_energy]
+  [pff_energy]
    family = monomial
+  []
+  [force_x]
+    family = lagrange 
+  []
+  [force_y]
+    family = lagrange 
   []
 []
 
 [AuxKernels]
-  [strain_energy_coupling]
+  [pff_energy_coupling]
     type = MaterialRealAux
-    property = strain_energy
-    variable = strain_energy
+    property = pff_energy
+    variable = pff_energy
     execute_on = TIMESTEP_END
   []
 []
@@ -71,11 +78,36 @@
     []
 []
 
+[Postprocessors]
+  [cracktip]
+    type = CrackTipLocation
+    variable = damage
+    direction = x 
+    outputs = data
+  []
+  [force]
+    type = NodalSum
+    boundary = Top 
+    variable = force_y 
+    outputs = data
+  []
+  [disp]
+    type = AverageNodalVariableValue
+    variable = disp_y 
+    boundary = Top 
+    outputs = data 
+  []
+  [iterations]
+    type = NumFixedPointIterations
+    outputs = data
+  []
+[]
+
 [Executioner]
   type = Transient
   solve_type = "NEWTON"
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_type'
-  petsc_options_value = 'lu mumps'
+  petsc_options_iname = '-pc_type'
+  petsc_options_value = 'lu'
   nl_abs_tol = 1e-6
   nl_rel_tol = 1e-3
   fixed_point_max_its = 1000
@@ -87,7 +119,7 @@
 [MultiApps]
   [damage]
     type = TransientMultiApp
-    input_files = 'sent_picard_sub.i'
+    input_files = 'sent_staggered_sub.i'
     execute_on = timestep_end
   []
 []
@@ -96,8 +128,8 @@
   [push_crack_driving_force]
     type = MultiAppCopyTransfer
     to_multi_app = damage
-    source_variable = 'strain_energy'
-    variable = 'strain_energy'
+    source_variable = 'pff_energy'
+    variable = 'pff_energy'
   []
   [pull_damage]
     type = MultiAppCopyTransfer
@@ -111,5 +143,9 @@
   print_linear_residuals = false
   [out]
     type = Exodus
+    min_simulation_time_interval = 0.1
+  []
+  [data]
+    type = CSV
   []
 []

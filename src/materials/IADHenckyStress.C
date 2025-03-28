@@ -22,7 +22,8 @@ IADHenckyStress::IADHenckyStress(
   // Consumed properties
   _elasticity_tensor(getMaterialProperty<RankFourTensor>(_base_name + "elasticity_tensor"))
 {
-  mooseAssert(_large_kinematics, "large_kinematics needs to be set to true");
+  if (!_large_kinematics)
+    mooseError("large_kinematics needs to be set to true");
 }
 
 void IADHenckyStress::computeQpPK1Stress()

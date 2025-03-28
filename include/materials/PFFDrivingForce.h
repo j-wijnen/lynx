@@ -26,7 +26,7 @@ protected:
   const std::string _degradation_name;
   const MaterialProperty<Real> & _dg_du,
                                & _d2g_du2,
-                               & _strain_energy;
+                               & _pff_energy;
 
   // Declared properties
   const std::string _pff_driving_force_name;

@@ -6,14 +6,14 @@ registerMooseObject("LynxApp", LinearRampDirichletBC);
 InputParameters
 LinearRampDirichletBC::validParams()
 {
-  InputParameters params = NodalBC::validParams();
+  InputParameters params = DirichletBCBase::validParams();
 
   params.addClassDescription("Linearly increases from the current value to"
                              "the prescribed value at the given time");
 
   params.addRequiredParam<Real>("value", "Value to be described");
-  params.addRequiredParam<Real>("end_time", "Time at which the condition should be satisfied");
   params.addParam<Real>("start_time", 0.0, "Start time of increase. Before this time the value is kept constant.");
+  params.addParam<Real>("end_time", 0.0, "Time at which the condition should be satisfied");
 
   return params;
 }
@@ -22,17 +22,17 @@ LinearRampDirichletBC::validParams()
 LinearRampDirichletBC::LinearRampDirichletBC(
   const InputParameters & params
 )
-  : NodalBC(params),
-    _value(getParam<Real>("value")),
-    _end_time(getParam<Real>("end_time")),
-    _start_time(getParam<Real>("start_time")),
-    _u_old(valueOld())
+  : DirichletBCBase(params),
+  _value(getParam<Real>("value")),
+  _start_time(getParam<Real>("start_time")),
+  _end_time(getParam<Real>("end_time")),
+  _u_old(valueOld())
 {
 }
 
 
 Real
-LinearRampDirichletBC::computeQpResidual()
+LinearRampDirichletBC::computeQpValue()
 {
   // Apply constant value before/after start/end time
   if(_t <= _start_time)
@@ -41,6 +41,5 @@ LinearRampDirichletBC::computeQpResidual()
     return _u[_qp] - _value;
 
   // Linear ramp to value
-  Real up = (_t - _t_old) / (_end_time - _t_old) * (_value - _u_old[_qp]) + _u_old[_qp];
-  return _u[_qp] - up;
+  return (_t - _t_old) / (_end_time - _t_old) * (_value - _u_old[_qp]) + _u_old[_qp];
 }

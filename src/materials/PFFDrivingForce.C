@@ -15,7 +15,7 @@ PFFDrivingForce::validParams()
   // Consumed property names
   params.addParam<MaterialPropertyName>("pff_degradation_name", "pff_degradation",
                                         "The name of the material degradation property.");
-  params.addParam<MaterialPropertyName>("strain_energy_name", "strain_energy",
+  params.addParam<MaterialPropertyName>("pff_energy_name", "pff_energy",
                                         "The name of the elastic strain energy density.");
 
   // Declared property names
@@ -37,7 +37,7 @@ PFFDrivingForce::PFFDrivingForce(
   _dg_du(getMaterialPropertyDerivative<Real>(_degradation_name, _u_name)),
   _d2g_du2(getMaterialPropertyDerivative<Real>(_degradation_name, _u_name, _u_name)),
   
-  _strain_energy(getMaterialProperty<Real>("strain_energy_name")),
+  _pff_energy(getMaterialProperty<Real>("pff_energy_name")),
 
   // Declared properties
   _pff_driving_force_name(getParam<MaterialPropertyName>("pff_driving_force_name")),
@@ -49,6 +49,6 @@ PFFDrivingForce::PFFDrivingForce(
 void
 PFFDrivingForce::computeQpProperties()
 {
-  _pff_driving_force[_qp] = -1.0 *  _dg_du[_qp] * _strain_energy[_qp];
-  _dpff_driving_force_du[_qp] = -1.0 * _d2g_du2[_qp] * _strain_energy[_qp];
+  _pff_driving_force[_qp] = -1.0 *  _dg_du[_qp] * _pff_energy[_qp];
+  _dpff_driving_force_du[_qp] = -1.0 * _d2g_du2[_qp] * _pff_energy[_qp];
 }

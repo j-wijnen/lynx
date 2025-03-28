@@ -1,24 +1,23 @@
 [GlobalParams]
   displacements = 'disp_x disp_y'
-  large_kinematics = false
   end_time = 1.0
-  dt = 0.04
+  dt = 0.1
 []
 
 [Mesh]
   [generated]
     type = GeneratedMeshGenerator
     dim = 2
-    nx = 1
-    ny = 1
+    nx = 2
+    ny = 2
     xmax = 1
     ymax = 1
   []
   [leftbottom]
     type = BoundingBoxNodeSetGenerator
     new_boundary = leftbottom
-    bottom_left = '-0.5 -0.5 0.0'
-    top_right = '0.5 0.5 0'
+    bottom_left = '-0.01 -0.01 0.0'
+    top_right = '0.01 0.01 0'
     input = generated
   []
 []
@@ -26,47 +25,30 @@
 [Physics/SolidMechanics/QuasiStatic]
   [all]
     strain = small
-    new_system = true
+    new_system = false
     add_variables = true
-    generate_output = 'pk1_stress_xx strain_xx'
+    generate_output = 'stress_xx strain_xx plastic_strain_xx'
+    save_in = 'force_x force_y'
+    []
   []
-[]
-
-[Variables]
-  [damage]
-      family = lagrange
-      order = first
+  
+[AuxVariables]
+  [force_x]
+    family = lagrange
   []
-[]
-
-[Kernels]
-  [pff]
-    type = PhaseFieldFractureAT2
-    variable = damage
+  [force_y]
+    family = lagrange
   []
 []
 
 [Materials]
-  [properties]
-    type = GenericConstantMaterial
-    prop_names = 'fracture_toughness length_scale'
-    prop_values = '2.5 1.0'
-  []
-  [elasticity]
-    type = ComputeIsotropicElasticityTensor
-    youngs_modulus = 210e3
-    poissons_ratio = 0.3
-  []
-  [stress]
-    type = PFFElasticStress
-  []
-  [degradation]
-    type = PFFDegradationFunction
-    variable = damage
-  []
-  [driving_force]
-    type = PFFDrivingForce
-    variable = damage
+  [plasticity]
+    type = IsotropicPlasticStress
+    youngs_modulus = 200e3
+    poisson_ratio = 0.3
+    yield_stress = 200.0
+    hardening_law = powerlaw
+    hardening_exponent = 0.1
   []
 []
 
@@ -75,7 +57,7 @@
         type = LinearRampDirichletBC
         variable = disp_x
         boundary = right
-        value = 0.01
+        value = 0.005
     []
     [left]
         type = DirichletBC
@@ -109,7 +91,21 @@
   line_search = none
 []
 
+[Postprocessors]
+  [force]
+    type = NodalSum
+    variable = force_x
+    boundary = right
+    outputs = force
+  []
+[]
+
 [Outputs]
-  exodus = true
   print_linear_residuals = false
+  [out]
+    type = Exodus
+  []
+  [force]
+    type = CSV
+  []
 []

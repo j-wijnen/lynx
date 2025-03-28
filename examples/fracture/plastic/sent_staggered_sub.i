@@ -1,21 +1,20 @@
 [GlobalParams]
-  order = first
+  order = second
 []
 
 [Mesh]
-  file = sent.msh
+  file = ../mesh/sent.msh
 []
 
 [Variables]
   [damage]
-    initial_condition = 0.0
+    family = lagrange
   []
 []
 
 [AuxVariables]
-  [strain_energy]
+  [pff_energy]
     family = monomial
-    order = first
   []
 []
 
@@ -30,12 +29,12 @@
   [properties]
     type = GenericConstantMaterial
     prop_names = 'fracture_toughness length_scale'
-    prop_values = '2.5 1.0'
+    prop_values = '20 0.5'
   []
   [strain_energy]
     type = MaterialFromVariable
-    property = strain_energy
-    variable = strain_energy
+    property = pff_energy
+    variable = pff_energy
   []
   [degradation]
     type = PFFDegradationFunction
@@ -59,9 +58,9 @@
 [Executioner]
   type = Transient
   solve_type = "NEWTON"
-  petsc_options_iname = '-pc_type'
-  petsc_options_value = 'lu'
-  nl_abs_tol = 1e-4
+  petsc_options_iname = '-pc_type -pc_factor_mat_solver_type'
+  petsc_options_value = 'lu mumps'
+  nl_abs_tol = 1e-6
   nl_rel_tol = 1e-3
 []
 

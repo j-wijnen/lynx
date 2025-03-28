@@ -34,7 +34,8 @@ IADNeoHookeanStress::IADNeoHookeanStress(
   _shearmod(getParam<Real>("shear_modulus")),
   _bulkmod(getParam<Real>("bulk_modulus"))
 {
-  mooseAssert(_large_kinematics, "large_kinematics needs to be set to true");
+  if (!_large_kinematics)
+    mooseError("large_kinematics needs to be set to true");
 }
 
 void IADNeoHookeanStress::computeQpPK1Stress()
