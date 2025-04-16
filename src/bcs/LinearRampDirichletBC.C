@@ -36,9 +36,9 @@ LinearRampDirichletBC::computeQpValue()
 {
   // Apply constant value before/after start/end time
   if(_t <= _start_time)
-    return _u[_qp] - _u_old[_qp];
+    return _u_old[_qp];
   else if(_t >= _end_time)
-    return _u[_qp] - _value;
+    return _value;
 
   // Linear ramp to value
   return (_t - _t_old) / (_end_time - _t_old) * (_value - _u_old[_qp]) + _u_old[_qp];

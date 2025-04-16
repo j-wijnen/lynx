@@ -17,20 +17,18 @@ InputParameters
 IncreasingDT::validParams()
 {
   InputParameters params = TimeStepper::validParams();
-  params.addParam<Real>("dt", 1., "The initial time step size.");
+  params.addRequiredParam<Real>("dt", "The initial time step size.");
+  params.addParam<Real>("dt_max", "Largest timestep allowed");
   params.addParam<Real>("ratio", 2., "The ratio used to calculate the next timestep");
-  params.addParam<Real>("max_dt", 10., "Largest timestep allowed");
   params.addParam<unsigned int>("ninc", 4, "Number of increments between timestep change");
   return params;
 }
 
-IncreasingDT::IncreasingDT(
-  const InputParameters & parameters
-)
+IncreasingDT::IncreasingDT(const InputParameters & parameters)
   : TimeStepper(parameters), 
   _dt(getParam<Real>("dt")),
+  _dt_max(isParamValid("dt_max") ? getParam<Real>("dt_max") : _dt),
   _ratio(getParam<Real>("ratio")), 
-  _max_dt(getParam<Real>("max_dt")),
   _ninc(getParam<unsigned int>("ninc"))
 {
   _first_inc = true;
@@ -57,10 +55,10 @@ IncreasingDT::computeDT()
   ++_iinc;
 
   // Adapt if conditions satisfied
-  if( _iinc > _ninc && getCurrentDT() < _max_dt )
+  if( _iinc > _ninc && getCurrentDT() < _dt_max )
   {
     _iinc = 1;
-    return std::min(_ratio * getCurrentDT(), _max_dt);
+    return std::min(_ratio * getCurrentDT(), _dt_max);
   }
   else
     return getCurrentDT();

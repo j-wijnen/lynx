@@ -1,0 +1,15 @@
+[Tests]
+  design = 'PhaseFieldFracture.md'
+  [test_elastic]
+    type = 'Exodiff'
+    input = 'elastic.i'
+    exodiff = 'elastic_out.e'
+    requirement = 'The system shall be able to solve a homogeneous phase field fracture problem.'
+  []
+  [test_plastic]
+    type = 'Exodiff'
+    input = 'plastic.i'
+    exodiff = 'plastic_out.e'
+    requirement = 'The system shall be able to solve a homogeneous phase field fracture problem.'
+  []
+[]

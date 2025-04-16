@@ -1,7 +1,6 @@
 #pragma once
 
 #include "IsotropicPlasticStress.h"
-#include "RankTwoTensor.h"
 
 /**
  * LinearElasticStress computes the linear elastic stress
@@ -10,16 +9,19 @@
 class PFFIsotropicPlasticStress : public IsotropicPlasticStress
 {
 public:
-
   static InputParameters validParams();
 
   PFFIsotropicPlasticStress(const InputParameters & parameters);
 
 protected:
-
   virtual void initQpStatefulProperties() override;
 
   virtual void computeQpStress() override;
+
+  virtual Real computeReturnResidual(Real trial_stress,
+    Real dplastic_mult) override;
+
+  virtual Real computeReturnDerivative(Real dplastic_mult) override;
 
   // Consumed properties
   const OptionalMaterialProperty<Real> & _g;
@@ -35,4 +37,6 @@ protected:
 
   // Parameters
   const Real _beta;
+  const bool _energy_split;
+  const bool _consistent_split;
 };

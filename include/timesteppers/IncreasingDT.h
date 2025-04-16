@@ -1,4 +1,4 @@
-//* This file is part of the MOOSE framework
+//* This file is part of the LYNX framework
 //* https://www.mooseframework.org
 //*
 //* All rights reserved, see COPYRIGHT for full restrictions
@@ -32,8 +32,8 @@ protected:
 private:
 
   const Real _dt, 
-             _ratio,
-             _max_dt;
+             _dt_max,
+             _ratio;
 
   const unsigned int _ninc;
 
