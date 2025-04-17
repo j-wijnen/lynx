@@ -21,6 +21,10 @@ export CXXFLAGS='-O2 -march=native -ftree-vectorize'
 export FCFLAGS='-O2 -march=native -ftree-vectorize'
 export FFLAGS='-O2 -march=native -ftree-vectorize'
 
+cd $MOOSE_DIR/test
+make clean
+git pull
+
 cd $MOOSE_DIR/scripts
 ./update_and_rebuild_petsc.sh COPTFLAGS='-O2 -march=native -ftree-vectorize' CXXOPTFLAGS='-O2 -march=native -ftree-vectorize' \
   FCOPTFLAGS='-O2 -march=native -ftree-vectorize' FOPTFLAGS='-O2 -march=native -ftree-vectorize' $LINK_MPI_DIR || return
