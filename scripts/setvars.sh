@@ -1,14 +1,19 @@
 export METHOD=opt
 
-if [[ $CFLAGS != *"-march=native -ftree-vectorize"* ]]; then
-  export CFLAGS=$CFLAGS' -march=native -ftree-vectorize' 
+export CC=mpicc 
+export CXX=mpicxx 
+export FC=mpif90
+
+FLAGS="-O2 -march=native -funroll-loops -ftree-vectorize"
+if [[ $CFLAGS != *"$FLAGS"* ]]; then
+  export CFLAGS=$CFLAGS" $FLAGS" 
 fi
-if [[ $CXXFLAGS != *"-march=native -ftree-vectorize"* ]]; then
-  export CXXFLAGS=$CXXFLAGS' -march=native -ftree-vectorize' 
+if [[ $CXXFLAGS != *"$FLAGS"* ]]; then
+  export CXXFLAGS=$CXXFLAGS" $FLAGS" 
 fi
-if [[ $FCFLAGS != *"-march=native -ftree-vectorize"* ]]; then
-  export FCFLAGS=$FCFLAGS' -march=native -ftree-vectorize' 
+if [[ $FFLAGS != *"$FLAGS"* ]]; then
+  export FFLAGS=$FFLAGS" $FLAGS" 
 fi
-if [[ $FFLAGS != *"-march=native -ftree-vectorize"* ]]; then
-  export FFLAGS=$FFLAGS' -march=native -ftree-vectorize' 
-fi
+#if [[ $FFLAGS != *"$FLAGS"* ]]; then
+#  export FFLAGS=$FFLAGS" $FLAGS" 
+#fi

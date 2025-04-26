@@ -15,7 +15,9 @@ protected:
 
   // Coupled damage variable
   const VariableValue & _damage;
+  const VariableGradient & _grad_damage;
 
   /// Fracture toughenss property
   const MaterialProperty<Real> & _fracture_toughness;
+  const MaterialProperty<Real> & _length_scale;
 };

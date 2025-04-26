@@ -152,6 +152,7 @@
   [out]
     type = Exodus
     min_simulation_time_interval = 0.1
+    elemental_as_nodal=true
   []
   [data]
     type = CSV
