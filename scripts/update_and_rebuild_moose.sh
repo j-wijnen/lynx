@@ -6,6 +6,8 @@ fi
 export CC=mpicc 
 export CXX=mpicxx 
 export FC=mpif90
+export F90=mpif90
+export F77=mpif77
 
 export METHODS=opt
 export METHOD=opt
@@ -13,6 +15,7 @@ export METHOD=opt
 FLAGS="-O2 -march=native -funroll-loops"
 export CFLAGS=$FLAGS
 export CXXFLAGS=$FLAGS
+export FCFLAGS=$FLAGS
 export FFLAGS=$FLAGS
 
 cd $MOOSE_DIR/test

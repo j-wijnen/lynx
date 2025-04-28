@@ -2,13 +2,13 @@
 
 #include "AuxKernel.h"
 
-class FractureEnergyAux : public AuxKernel
+class FractureEnergyAT2Aux : public AuxKernel
 {
 public:
   static InputParameters validParams();
 
-  FractureEnergyAux(const InputParameters & parameters);
-  virtual ~FractureEnergyAux() {}
+  FractureEnergyAT2Aux(const InputParameters & parameters);
+  virtual ~FractureEnergyAT2Aux() {}
 
 protected:
   virtual Real computeValue();
