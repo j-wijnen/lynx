@@ -47,7 +47,6 @@ IsotropicPlasticStress::IsotropicPlasticStress(
   _hardening_exponent(getParam<Real>("hardening_exponent")),
   _tolerance(getParam<Real>("tolerance"))
 {
-  std::cout << "Created IsotropicPlasticStress" << std::endl;
   // Assign hardening law
   switch(_hardening_law)
   {
