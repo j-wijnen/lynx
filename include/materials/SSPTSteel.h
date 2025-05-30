@@ -1,8 +1,26 @@
+//* This file is part of Lynx, 
+//* an open-source application for the simulation  
+//* of mechanics and multi-physics problems
+//* https://github.com/j-wijnen/lynx
+//*
+//* Lynx is powered by the MOOSE Framework
+//* https://www.mooseframework.org
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
 #pragma once
 
+#include <array>
 #include "Material.h"
 
-// Use enum to index/loop phases
+namespace lynx
+{
+
+/**
+ * Enum used to index/loop phases 
+ */ 
+
 enum Phase {
   ferrite,
   pearlite,
@@ -19,20 +37,20 @@ const std::array<Phase,5> phases = {
   austenite
 };
 
-// SSPTSteel model definition
+/**
+ * SSPTSteel simulates solid-state phase transformations
+ * and calculates underlying phase fractions of ferrite,
+ * pearlite, bainite, martensite, and austenite
+ */
+
 class SSPTSteel : public Material 
 {
 public:
-
   static InputParameters validParams();
 
-  SSPTSteel(
-    const InputParameters& params 
-  );
+  SSPTSteel(const InputParameters& params);
 
 protected:
-
-  // Compute quadrature point properties
   virtual void initQpStatefulProperties() override;
 
   virtual void computeQpProperties() override;
@@ -43,23 +61,16 @@ protected:
   Real grainGrowth();
 
   // Diffusive transformation using Kirkaldy equations
-  std::tuple<Real,Real> diffusiveTransformation(
-    Phase phase,
-    Real x,
-    Real nuc
-  );
+  std::tuple<Real,Real> diffusiveTransformation(Phase phase,
+                                                Real x,
+                                                Real nuc);
 
-  Real diffusiveTransformationResidual(
-    Real x0,
-    Real x,
-    Real dt,
-    Real fun_tc
-  );
+  Real diffusiveTransformationResidual(Real x0,
+                                       Real x,
+                                       Real dt,
+                                       Real fun_tc);
 
-  Real funTc(
-    Phase phase,
-    Real temp
-  );
+  Real funTc(Phase phase, Real temp);
 
   // Calculates the incremenet in martensite upon heating using the
   // Koistenen-Marburger equation
@@ -71,36 +82,23 @@ protected:
   // Reduces the time increment to be between lower and upper bounds
   // returns (T_split, dt_split)
   std::tuple<Real,Real> splitIncrementHeating(Phase phase);
-
   std::tuple<Real,Real> splitIncrementCooldown(Phase phase);
 
   // Coupled variables
-  const VariableValue & _temp, 
-                      & _temp_old;
+  const VariableValue & _temperature; 
+  const VariableValue & _temperature_old;
 
   // Stateful material properties
-  MaterialProperty<Real> & _xa,
-                         & _xf,
-                         & _xp,
-                         & _xb,
-                         & _xm,
-                         & _nucf,
-                         & _nucp,
-                         & _nucb,
-                         & _Gsize;
+  const std::array<MaterialProperty<Real> *,5> _fractions;
+  const std::array<MaterialProperty<Real> *,3> _nucleation;
+  MaterialProperty<Real> & _grain_size;
 
-  const MaterialProperty<Real> & _xa_old,
-                               & _xf_old,
-                               & _xp_old,
-                               & _xb_old,
-                               & _xm_old,
-                               & _nucf_old,
-                               & _nucp_old,
-                               & _nucb_old,
-                               & _Gsize_old;
+  const std::array<const MaterialProperty<Real> *,5> _fractions_old;
+  const std::array<const MaterialProperty<Real> *,3> _nucleation_old;
+  const MaterialProperty<Real> & _grain_size_old;
 
   // Initial phase fractions (input)
-  std::array<Real,5> _x_init;
+  std::array<Real,5> _fractions_init;
 
   // Composition (input)
   Real  _comp_C,
@@ -119,27 +117,28 @@ protected:
         _comp_Cu;
 
   // Transformation temperatures
-  Real _temp_Ae3,
-       _temp_Ae1,
-       _temp_Bs,
-       _temp_Ms;
+  Real _temperature_Ae3,
+       _temperature_Ae1,
+       _temperature_Bs,
+       _temperature_Ms;
 
-  std::array<Real,5>  _temp_lower,
-                      _temp_upper;
+  std::array<Real,5>  _temperature_lower,
+                      _temperature_upper;
 
   // Grain sizes (PAG)
-  Real _Gsize_init,
-       _Gsize_min,
-       _Gsize_max;
+  Real _grain_size_init,
+       _grain_size_min,
+       _grain_size_max;
 
   // Compositional functions
   std::array<Real,3> _fcomp;
 
   // Phase dependent constants
-  const std::array<Real,3> _Gsize_factor = {0.41, 0.32, 0.29};
+  const std::array<Real,3> _grain_size_factor = {0.41, 0.32, 0.29};
   const std::array<int,3> _ucool_exponent = {3, 3, 2};
 
   // Misc. constants
   const Real _tolerance = 1e-4;
 };
 
+}

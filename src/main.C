@@ -1,8 +1,10 @@
-//* This file is part of the MOOSE framework
-//* https://www.mooseframework.org
+//* This file is part of Lynx, 
+//* an open-source application for the simulation  
+//* of mechanics and multi-physics problems
+//* https://github.com/j-wijnen/lynx
 //*
-//* All rights reserved, see COPYRIGHT for full restrictions
-//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
+//* Lynx is powered by the MOOSE Framework
+//* https://www.mooseframework.org
 //*
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html

@@ -3,6 +3,8 @@
 #include "ComputeStressBase.h"
 #include "RankFourTensor.h"
 
+namespace lynx {
+
 /**
  * LinearElasticStress computes the linear elastic stress
  */
@@ -20,4 +22,6 @@ protected:
 
   // Consumed properties
   const MaterialProperty<RankFourTensor> & _elasticity_tensor;
+};
+
 };

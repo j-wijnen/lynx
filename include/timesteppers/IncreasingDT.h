@@ -31,12 +31,14 @@ protected:
 
 private:
 
-  const Real _dt, 
-             _dt_max,
-             _ratio;
-
-  const unsigned int _ninc;
+  const Real _dt; 
+  const Real _dt0;
+  const Real _dt_max;
+  const Real _ratio;
+  
+  const int _ninc;
 
   bool _first_inc;
-  unsigned int _iinc;
+  bool _second_inc;
+  int _iinc;
 };

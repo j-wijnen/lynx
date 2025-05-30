@@ -29,7 +29,7 @@
     [sspt]
         type = SSPTSteel
         variable = temp
-        output_properties = 'frac_a frac_f'
+        output_properties = 'fraction_austenite fraction_ferrite'
         outputs = exodus
         comp_C = 0.176
         comp_Si = 0.217

@@ -9,6 +9,7 @@
 
 #include "IncreasingDT.h"
 
+
 // Moose includes
 
 registerMooseObject("LynxApp", IncreasingDT);
@@ -17,44 +18,58 @@ InputParameters
 IncreasingDT::validParams()
 {
   InputParameters params = TimeStepper::validParams();
-  params.addRequiredParam<Real>("dt", "The initial time step size.");
+  params.addRequiredParam<Real>("dt", "The default time step size.");
   params.addParam<Real>("dt_max", "Largest timestep allowed");
   params.addParam<Real>("ratio", 2., "The ratio used to calculate the next timestep");
-  params.addParam<unsigned int>("ninc", 4, "Number of increments between timestep change");
+  params.addParam<int>("ninc", 4, "Number of increments between timestep change");
+  params.addParam<Real>("dt0", "Time step ot t=0, set to dt at next increment");
   return params;
 }
 
 IncreasingDT::IncreasingDT(const InputParameters & parameters)
   : TimeStepper(parameters), 
   _dt(getParam<Real>("dt")),
+  _dt0(isParamValid("dt0") ? getParam<Real>("dt0") : _dt),
   _dt_max(isParamValid("dt_max") ? getParam<Real>("dt_max") : _dt),
   _ratio(getParam<Real>("ratio")), 
-  _ninc(getParam<unsigned int>("ninc"))
+  _ninc(getParam<int>("ninc"))
 {
   _first_inc = true;
+  _second_inc = false;
 }
 
 Real
 IncreasingDT::computeInitialDT()
 {
-  return _dt;
+  return _dt0;
 }
 
 Real
 IncreasingDT::computeDT()
 {
-  // Initial dt
+  // Initial dt0
   if( _first_inc )
   {
     _first_inc = false;
+    _second_inc = true;
     _iinc = 1;
     return _dt;
   }
+  // // Change to default dt after first increment
+  // else if (_second_inc)
+  // {
+  //   _second_inc = false;
+  //   if (getCurrentDT() < _dt)
+  //   {
+  //     _iinc = 1;
+  //     return _dt;
+  //   }
+  // }
 
   // Count increments since last change
   ++_iinc;
 
-  // Adapt if conditions satisfied
+  // Increase dt if conditions satisfied
   if( _iinc > _ninc && getCurrentDT() < _dt_max )
   {
     _iinc = 1;

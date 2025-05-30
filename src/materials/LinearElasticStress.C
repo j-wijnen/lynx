@@ -2,6 +2,9 @@
 #include "RankFourTensor.h"
 #include "RankTwoTensor.h"
 
+namespace lynx 
+{
+
 registerMooseObject("LynxApp", LinearElasticStress);
 
 InputParameters
@@ -28,3 +31,5 @@ void LinearElasticStress::computeQpStress()
   _stress[_qp] = _elasticity_tensor[_qp] * _elastic_strain[_qp];
   _Jacobian_mult[_qp] = _elasticity_tensor[_qp];
 }
+
+};

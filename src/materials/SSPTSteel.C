@@ -1,7 +1,20 @@
+//* This file is part of Lynx, 
+//* an open-source application for the simulation  
+//* of mechanics and multi-physics problems
+//* https://github.com/j-wijnen/lynx
+//*
+//* Lynx is powered by the MOOSE Framework
+//* https://www.mooseframework.org
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
 #include "SSPTSteel.h"
 
-registerMooseObject("LynxApp", SSPTSteel);
+namespace lynx
+{
 
+registerMooseObject("LynxApp", SSPTSteel);
 
 InputParameters
 SSPTSteel::validParams()
@@ -10,11 +23,11 @@ SSPTSteel::validParams()
 
   params.addRequiredCoupledVar("variable", "Temperature variable");
 
-  params.addParam<Real>("frac_a", 0.0, "Initial austenite fraction");
-  params.addParam<Real>("frac_f", 0.0, "Initial ferrite fraction");
-  params.addParam<Real>("frac_p", 0.0, "Initial pearlite fraction");
-  params.addParam<Real>("frac_b", 0.0, "Initial bainite fraction");
-  params.addParam<Real>("frac_m", 0.0, "Initial martensite fraction");
+  params.addParam<Real>("fraction_austenite", 0.0, "Initial austenite fraction");
+  params.addParam<Real>("fraction_ferrite", 0.0, "Initial ferrite fraction");
+  params.addParam<Real>("fraction_pearite", 0.0, "Initial pearlite fraction");
+  params.addParam<Real>("fraction_bainite", 0.0, "Initial bainite fraction");
+  params.addParam<Real>("fraction_martensite", 0.0, "Initial martensite fraction");
 
   params.addParam<Real>("comp_C", 0.0, "Carbon content");
   params.addParam<Real>("comp_Mn", 0.0, "Manganese content");
@@ -31,10 +44,10 @@ SSPTSteel::validParams()
   params.addParam<Real>("comp_Ti", 0.0, "Titanium content");
   params.addParam<Real>("comp_Cu", 0.0, "Copper content");
 
-  params.addParam<Real>("temp_Ae3", 0.0, "Ferrite transformation temperature");
-  params.addParam<Real>("temp_Ae1", 0.0, "Pearlite transformation temperature");
-  params.addParam<Real>("temp_Bs", 0.0, "Bainite transformation temperature");
-  params.addParam<Real>("temp_Ms", 0.0, "Martensite transformation temperature");
+  params.addParam<Real>("temperature_Ae3", 0.0, "Ferrite transformation temperature");
+  params.addParam<Real>("temperature_Ae1", 0.0, "Pearlite transformation temperature");
+  params.addParam<Real>("temperature_Bs", 0.0, "Bainite transformation temperature");
+  params.addParam<Real>("temperature_Ms", 0.0, "Martensite transformation temperature");
 
   params.addParam<Real>("grain_size_init", 30.0, "Initial austenite grain size");
   params.addParam<Real>("grain_size_min", 30.0, "Minimum austenite grain size");
@@ -43,42 +56,39 @@ SSPTSteel::validParams()
   return params;
 }
 
-
-SSPTSteel::SSPTSteel(
-  const InputParameters & parameters
-)
+SSPTSteel::SSPTSteel(const InputParameters & parameters)
   : Material(parameters),
 
   // Couple temperature
-  _temp(coupledValue("variable")),
-  _temp_old(coupledValueOld("variable")),
+  _temperature(coupledValue("variable")),
+  _temperature_old(coupledValueOld("variable")),
 
   // Declare material properties
-  _xa(declareProperty<Real>("frac_a")),
-  _xf(declareProperty<Real>("frac_f")),
-  _xp(declareProperty<Real>("frac_p")),
-  _xb(declareProperty<Real>("frac_b")),
-  _xm(declareProperty<Real>("frac_m")),
-  _nucf(declareProperty<Real>("nuc_f")),
-  _nucp(declareProperty<Real>("nuc_p")),
-  _nucb(declareProperty<Real>("nuc_b")),
-  _Gsize(declareProperty<Real>("grain_size")),
-  _xa_old(getMaterialPropertyOld<Real>("frac_a")),
-  _xf_old(getMaterialPropertyOld<Real>("frac_f")),
-  _xp_old(getMaterialPropertyOld<Real>("frac_p")),
-  _xb_old(getMaterialPropertyOld<Real>("frac_b")),
-  _xm_old(getMaterialPropertyOld<Real>("frac_m")),
-  _nucf_old(getMaterialPropertyOld<Real>("nuc_f")),
-  _nucp_old(getMaterialPropertyOld<Real>("nuc_p")),
-  _nucb_old(getMaterialPropertyOld<Real>("nuc_b")),
-  _Gsize_old(getMaterialPropertyOld<Real>("grain_size")),
+  _fractions{&declareProperty<Real>("fraction_ferrite"),
+             &declareProperty<Real>("fraction_pearlite"),
+             &declareProperty<Real>("fraction_bainite"),
+             &declareProperty<Real>("fraction_martensite"),
+             &declareProperty<Real>("fraction_austenite")},
+  _nucleation{&declareProperty<Real>("nucleation_ferrite"),
+              &declareProperty<Real>("nucleation_pearlite"),
+              &declareProperty<Real>("nucleation_bainite")},
+  _grain_size(declareProperty<Real>("grain_size")),
+  _fractions_old{&getMaterialPropertyOld<Real>("fraction_ferrite"), 
+                 &getMaterialPropertyOld<Real>("fraction_pearlite"),
+                 &getMaterialPropertyOld<Real>("fraction_bainite"),
+                 &getMaterialPropertyOld<Real>("fraction_martensite"),
+                 &getMaterialPropertyOld<Real>("fraction_austenite")},
+  _nucleation_old{&getMaterialPropertyOld<Real>("nucleation_ferrite"),
+                  &getMaterialPropertyOld<Real>("nucleation_pearlite"),
+                  &getMaterialPropertyOld<Real>("nucleation_bainite")},
+  _grain_size_old(getMaterialPropertyOld<Real>("grain_size")),
 
   // Initial fractions
-  _x_init{getParam<Real>("frac_f"),
-          getParam<Real>("frac_p"),
-          getParam<Real>("frac_b"),
-          getParam<Real>("frac_m"),
-          getParam<Real>("frac_a")},
+  _fractions_init{getParam<Real>("fraction_ferrite"),
+                  getParam<Real>("fraction_pearlite"),
+                  getParam<Real>("fraction_bainite"),
+                  getParam<Real>("fraction_martensite"),
+                  getParam<Real>("fraction_austenite")},
 
   // Composition
   _comp_C(getParam<Real>("comp_C")),
@@ -97,62 +107,62 @@ SSPTSteel::SSPTSteel(
   _comp_Cu(getParam<Real>("comp_Cu")),
 
   // Transformation temperatures
-  _temp_Ae3(getParam<Real>("temp_Ae3")),
-  _temp_Ae1(getParam<Real>("temp_Ae1")),
-  _temp_Bs(getParam<Real>("temp_Bs")),
-  _temp_Ms(getParam<Real>("temp_Ms")),
+  _temperature_Ae3(getParam<Real>("temp_Ae3")),
+  _temperature_Ae1(getParam<Real>("temp_Ae1")),
+  _temperature_Bs(getParam<Real>("temp_Bs")),
+  _temperature_Ms(getParam<Real>("temp_Ms")),
 
   // Austenite grain sizes
-  _Gsize_init(getParam<Real>("grain_size_init")),
-  _Gsize_min(getParam<Real>("grain_size_min")),
-  _Gsize_max(getParam<Real>("grain_size_max"))
+  _grain_size_init(getParam<Real>("grain_size_init")),
+  _grain_size_min(getParam<Real>("grain_size_min")),
+  _grain_size_max(getParam<Real>("grain_size_max"))
 {
   // Bound check on fractions
   Real fracsum = 0.0;
 
   for( const auto phase : phases )
   {
-    if( _x_init[phase] < 0.0 || _x_init[phase] > 1.0 )
+    if( _fractions_init[phase] < 0.0 || _fractions_init[phase] > 1.0 )
       mooseError("Initial fractions should be between 0 and 1");
 
-    fracsum += _x_init[phase];
+    fracsum += _fractions_init[phase];
   }
 
   if( fracsum < 1.0 )
-    _x_init[austenite] = 1.0 - fracsum;
+    _fractions_init[austenite] = 1.0 - fracsum;
   else
     for( const auto phase : phases )
-      _x_init[phase] /= fracsum;
+      _fractions_init[phase] /= fracsum;
 
   // Temperature formulas Grange
-  if( _temp_Ae3 == 0.0 )
-    _temp_Ae3 = 5./9.*(1570. - 323.*_comp_C - 25.*_comp_Mn + 80.*_comp_Si 
+  if( _temperature_Ae3 == 0.0 )
+    _temperature_Ae3 = 5./9.*(1570. - 323.*_comp_C - 25.*_comp_Mn + 80.*_comp_Si 
       - 32.*_comp_Ni - 3.*_comp_Cr - 30.);
-  if( _temp_Ae1 == 0.0 )
-    _temp_Ae1 = 5./9.*(1333. - 25.*_comp_Mn + 40.*_comp_Si - 26.*_comp_Ni 
+  if( _temperature_Ae1 == 0.0 )
+    _temperature_Ae1 = 5./9.*(1333. - 25.*_comp_Mn + 40.*_comp_Si - 26.*_comp_Ni 
       + 42.*_comp_Cr - 32.);
-  if( _temp_Bs == 0.0 )
-    _temp_Bs = 637. - 58.*_comp_C - 35.*_comp_Mn - 15.*_comp_Ni 
+  if( _temperature_Bs == 0.0 )
+    _temperature_Bs = 637. - 58.*_comp_C - 35.*_comp_Mn - 15.*_comp_Ni 
       - 34.*_comp_Cr - 41.*_comp_Mo;
-  if( _temp_Ms == 0.0 )
-    _temp_Ms = 539. - 423.*_comp_C - 30.4*_comp_Mn - 17.7*_comp_Ni 
+  if( _temperature_Ms == 0.0 )
+    _temperature_Ms = 539. - 423.*_comp_C - 30.4*_comp_Mn - 17.7*_comp_Ni 
       - 12.1*_comp_Cr - 7.5*_comp_Mo + 10.*_comp_Co - 7.5*_comp_Si;
 
   // Set upper and lower temperatures
-  _temp_lower[ferrite] = _temp_Bs;
-  _temp_upper[ferrite] = _temp_Ae3;
+  _temperature_lower[ferrite] = _temperature_Bs;
+  _temperature_upper[ferrite] = _temperature_Ae3;
 
-  _temp_lower[pearlite] = _temp_Bs;
-  _temp_upper[pearlite] = _temp_Ae1;
+  _temperature_lower[pearlite] = _temperature_Bs;
+  _temperature_upper[pearlite] = _temperature_Ae1;
 
-  _temp_lower[bainite] = _temp_Ms;
-  _temp_upper[bainite] = _temp_Bs;
+  _temperature_lower[bainite] = _temperature_Ms;
+  _temperature_upper[bainite] = _temperature_Bs;
 
-  _temp_lower[martensite] = -273.15;
-  _temp_upper[martensite] = _temp_Ms;
+  _temperature_lower[martensite] = -273.15;
+  _temperature_upper[martensite] = _temperature_Ms;
 
-  _temp_lower[austenite] = _temp_Ae1;
-  _temp_upper[austenite] = 1e4;
+  _temperature_lower[austenite] = _temperature_Ae1;
+  _temperature_upper[austenite] = 1e4;
 
   // Composition formulas Li
   _fcomp[ferrite] = std::exp(1.0 + 6.31*_comp_C + 1.78*_comp_Mn + 0.31*_comp_Si 
@@ -163,23 +173,19 @@ SSPTSteel::SSPTSteel(
     + 0.55*_comp_Ni + 0.90*_comp_Cr + 0.36*_comp_Mo);
 }
 
-
 void
 SSPTSteel::initQpStatefulProperties()
 {
-  _xf[_qp] = _x_init[ferrite];
-  _xp[_qp] = _x_init[pearlite];
-  _xb[_qp] = _x_init[bainite];
-  _xm[_qp] = _x_init[martensite];
-  _xa[_qp] = _x_init[austenite];
+  for (auto phase : phases)
+  {
+    (*_fractions[phase])[_qp] = _fractions_init[phase];
 
-  _nucf[_qp] = _x_init[ferrite] < _tolerance ? 0.0 : 1.0;
-  _nucp[_qp] = _x_init[pearlite] < _tolerance ? 0.0 : 1.0;
-  _nucb[_qp] = _x_init[bainite] < _tolerance ? 0.0 : 1.0;
+    if (phase < 3)
+      (*_nucleation[phase])[_qp] = _fractions_init[phase] < _tolerance ? 0.0 : 1.0;
+  }
 
-  _Gsize[_qp] = _Gsize_init;
+  _grain_size[_qp] = _grain_size_init;
 }
-
 
 void
 SSPTSteel::computeQpProperties()
@@ -187,166 +193,149 @@ SSPTSteel::computeQpProperties()
   if( _dt == 0.0 )
     return;
 
-  Real dtemp = _temp[_qp] - _temp_old[_qp],
-       dxa = 0.0,
-       dxf = 0.0,
-       dxp = 0.0,
-       dxb = 0.0,
-       dxm = 0.0,
-       dnucf = 0.0,
-       dnucp = 0.0,
-       dnucb = 0.0,
-       dGsize = 0.0;
+  Real dtemperature = _temperature[_qp] - _temperature_old[_qp];
+  std::array<Real,5> dfractions;
+  std::array<Real,3> dnucleation = {0.0, 0.0, 0.0};;
+  Real  dgrain_size = 0.0;
 
   // Heating stage, austenite formation/grain growth
-  if( dtemp > 0.0 && checkTemperatureRange(austenite) )
+  if( dtemperature > 0.0 && checkTemperatureRange(austenite) )
   {
-    if( _xa[_qp] < 1.0 - _tolerance )
+    if( (*_fractions[austenite])[_qp] < 1.0 - _tolerance )
     {
-      dxa = austeniteTransformation();
+      dfractions[austenite] = austeniteTransformation();
       
-      dxf = -dxa * _xf[_qp]/(1.0 - _xa[_qp]);
-      dxp = -dxa * _xp[_qp]/(1.0 - _xa[_qp]);
-      dxb = -dxa * _xb[_qp]/(1.0 - _xa[_qp]);
-      dxm = -dxa * _xm[_qp]/(1.0 - _xa[_qp]);
+      for (auto phase : phases)
+        if (phase != austenite)
+          dfractions[phase] = -dfractions[austenite] * (*_fractions[phase])[_qp]/(1.0 - (*_fractions[austenite])[_qp]);
     }
 
     // Reset initial grain size if first austenitization inc
-    if( _temp_old[_qp] <= _temp_lower[austenite] )
-      dGsize = (_xa_old[_qp] - 1.0) * _Gsize_old[_qp] + (1.0 - _xa_old[_qp])*_Gsize_min;
+    if( _temperature_old[_qp] <= _temperature_lower[austenite] )
+      dgrain_size = ((*_fractions_old[austenite])[_qp] - 1.0) * _grain_size_old[_qp] 
+        + (1.0 - (*_fractions_old[austenite])[_qp])*_grain_size_min;
     
-    dGsize += grainGrowth();
+    dgrain_size += grainGrowth();
   }
 
   // Cooling stage, austenite decomposition
-  else if( dtemp <= 0.0 && _xa[_qp] > _tolerance )
+  else if( dtemperature <= 0.0 && (*_fractions[austenite])[_qp] > _tolerance )
   {
-    if( checkTemperatureRange(ferrite) )
-      std::tie(dxf, dnucf) = diffusiveTransformation(ferrite, _xf_old[_qp], _nucf_old[_qp]);
+    dfractions[austenite] = 0.0;
+    for (auto phase : phases)
+    {
+      // Ferrite, pearlite, bainite
+      if (phase < 3 && checkTemperatureRange(phase))
+        std::tie(dfractions[phase], dnucleation[phase]) = diffusiveTransformation(phase, 
+          (*_fractions_old[phase])[_qp], (*_nucleation_old[phase])[_qp]);
 
-    if( checkTemperatureRange(pearlite) )
-      std::tie(dxp, dnucp) = diffusiveTransformation(pearlite, _xp_old[_qp], _nucp_old[_qp]);
-
-    if( checkTemperatureRange(bainite) )
-      std::tie(dxb, dnucb) = diffusiveTransformation(bainite, _xb_old[_qp], _nucb_old[_qp]);
-
-    if( checkTemperatureRange(martensite) )
-      dxm = martensiteTransformation();
-
-    dxa = -(dxf + dxp + dxb + dxm);
+      // Martensite
+      if (phase == martensite && checkTemperatureRange(phase))
+        dfractions[phase] = martensiteTransformation();
+    
+      // Remove from austenite fraction
+      if (phase != austenite)
+          dfractions[austenite] -= dfractions[phase];
+    }
   }
 
   // Correct for over/under shooting
-  Real corr = 1.0;
-  if( _xa_old[_qp] + dxa > 1.0 )
-    corr = (1.0 - _xa_old[_qp]) / dxa;
-  else if( _xa_old[_qp] + dxa < 0.0 )
-    corr = -_xa_old[_qp] / dxa;
+  Real correct = 1.0;
+  if( (*_fractions_old[austenite])[_qp] + dfractions[austenite] > 1.0 )
+    correct = (1.0 - (*_fractions_old[austenite])[_qp]) / dfractions[austenite];
+  else if( (*_fractions_old[austenite])[_qp] + dfractions[austenite] < 0.0 )
+    correct = -(*_fractions_old[austenite])[_qp] / dfractions[austenite];
 
-  // Update material properties
-  _xa[_qp] = _xa_old[_qp] + corr * dxa;
-  _xf[_qp] = _xf_old[_qp] + corr * dxf;
-  _xp[_qp] = _xp_old[_qp] + corr * dxp;
-  _xb[_qp] = _xb_old[_qp] + corr * dxb;
-  _xm[_qp] = _xm_old[_qp] + corr * dxm;
+  // Update phase fractions
+  for (auto phase : phases)
+  {
+    (*_fractions[phase])[_qp] = (*_fractions_old[phase])[_qp] + correct * dfractions[phase];
+    (*_fractions[phase])[_qp] = std::min(std::max((*_fractions[phase])[_qp], 0.0), 1.0);
 
-  _nucf[_qp] = _nucf_old[_qp] + dnucf;
-  _nucp[_qp] = _nucp_old[_qp] + dnucp;
-  _nucb[_qp] = _nucb_old[_qp] + dnucb;
+    // Update nucleation variables
+    if (phase < 3)
+    {
+      (*_nucleation[phase])[_qp] = (*_nucleation_old[phase])[_qp] + dnucleation[phase];
 
-  _Gsize[_qp] = _Gsize_old[_qp] + dGsize;
+      // Phases have to re-nucleate if almost zero
+      if( (*_fractions[phase])[_qp] < _tolerance && (*_nucleation[phase])[_qp] >= 1.0 )
+        (*_nucleation[phase])[_qp] = 0.0;
+    }
+  }
 
-  // Phases have to re-nucleate if almost zero
-  if( _xf[_qp] < _tolerance && _nucf[_qp] >= 1.0 )
-    _nucf[_qp] = 0.0;
-  if( _xp[_qp] < _tolerance && _nucp[_qp] >= 1.0 )
-    _nucp[_qp] = 0.0;
-  if( _xb[_qp] < _tolerance && _nucb[_qp] >= 1.0 )
-    _nucb[_qp] = 0.0;
-
-   // Need to enforce bounds due to numerical inaccuracies
-  _xa[_qp] = std::min(std::max(_xa[_qp], 0.0), 1.0);
-  _xf[_qp] = std::min(std::max(_xf[_qp], 0.0), 1.0);
-  _xp[_qp] = std::min(std::max(_xp[_qp], 0.0), 1.0);
-  _xb[_qp] = std::min(std::max(_xb[_qp], 0.0), 1.0);
-  _xm[_qp] = std::min(std::max(_xm[_qp], 0.0), 1.0);
+  _grain_size[_qp] = _grain_size_old[_qp] + dgrain_size;
 }
-
 
 Real  
 SSPTSteel::austeniteTransformation()
 {
   // Split increment if only partially in temperature range
-  Real temp, dt;
-  std::tie(temp, dt) = splitIncrementCooldown(austenite);
+  Real temperature, dt;
+  std::tie(temperature, dt) = splitIncrementCooldown(austenite);
 
-  Real x_eq, tau;
-  if( temp <= _temp_Ae3 )
+  Real fraction_eq, tau;
+  if( temperature <= _temperature_Ae3 )
   {
-    x_eq = (temp - _temp_Ae1) / (_temp_Ae3 - _temp_Ae1);
+    fraction_eq = (temperature - _temperature_Ae1) / (_temperature_Ae3 - _temperature_Ae1);
     tau = 1.0 - 0.8*x_eq;
   }
   else 
   {
-    x_eq = 1.0;
+    fraction_eq = 1.0;
     tau = 0.05;
   }
 
-  return _dt * (x_eq - _xa_old[_qp]) / (tau + dt);
+  return _dt * (fraction_eq - (*_fractions_old[austenite])[_qp]) / (tau + dt);
 }
-
 
 Real 
 SSPTSteel::grainGrowth()
 {
   // Split increment if only partially in temperature range
-  Real temp, dt;
-  std::tie(temp, dt) = splitIncrementCooldown(austenite);
+  Real temperature, dt;
+  std::tie(temperature, dt) = splitIncrementCooldown(austenite);
 
-  return dt * 10.0e8 * exp(-22853.0/(temp+273.15)) 
-    * (1.0/_Gsize_old[_qp] - 1.0/_Gsize_max);
+  return dt * 10.0e8 * exp(-22853.0/(temperature+273.15)) 
+    * (1.0/_grain_size_old[_qp] - 1.0/_grain_size_max);
 }
 
-
 std::tuple<Real,Real>
-SSPTSteel::diffusiveTransformation(
-  Phase phase,
-  Real x,
-  Real nuc
-)
+SSPTSteel::diffusiveTransformation(Phase phase,
+                                   Real fraction,
+                                   Real nucleation)
 {
-  Real temp, dt;
-  std::tie(temp, dt) = splitIncrementHeating(phase);
+  Real temperature, dt;
+  std::tie(temperature, dt) = splitIncrementHeating(phase);
 
-  Real fun_tc = funTc(phase, temp),
-       dnuc = 0.0,
-       dx = 0.0,
-       dxdt;
+  Real fun_tc = funTc(phase, temperature);
+  Real dnucleation = 0.0;
+  Real dfraction = 0.0;
+  Real dfraction_dt;
 
   // Nucleation phase
-  if( nuc < 1.0 - _tolerance )
+  if( nucleation < 1.0 - _tolerance )
   {
-    dxdt = fun_tc / 0.10434035495809084;
-    dnuc = dxdt * dt;
+    dfraction_dt = fun_tc / 0.10434035495809084;
+    dnucleation = dfraction_dt * dt;
 
-    if( nuc + dnuc >= 1.0 )
+    if( nucleation + dnucleation >= 1.0 )
     {
-      dx = 0.01;
-      dt = (nuc + dnuc - 1.0) / dxdt;
+      dfraction = 0.01;
+      dt = (nucleation + dnucleation - 1.0) / dfraction_dt;
     }
   }
 
-  // Transformation phase
-  if( nuc + dnuc >= 1.0 )
+  // Transformation phase: solve for fraction
+  if( nucleation + dnucleation >= 1.0 )
   {
-    Real x0 = x + dx,
-         x1 = x0,
-         x2 = 0.5*(x0 + 1.0),
-         x3 = 1.0;
+    Real fraction0 = fraction + dfraction;
+    Real fraction1 = fraction0;
+    Real fraction2 = 0.5*(fraction0 + 1.0);
+    Real fraction3 = 1.0;
 
-    Real r1 = diffusiveTransformationResidual(x0, x1, dt, fun_tc),
-         r2 = diffusiveTransformationResidual(x0, x2, dt, fun_tc),
-         r3 = diffusiveTransformationResidual(x0, x3, dt, fun_tc);
+    Real r1 = diffusiveTransformationResidual(fraction0, fraction1, dt, fun_tc);
+    Real r2 = diffusiveTransformationResidual(fraction0, fraction2, dt, fun_tc);
+    Real r3 = diffusiveTransformationResidual(fraction0, fraction3, dt, fun_tc);
 
     Real cr, cs, ct, cp, cq, r;
 
@@ -360,20 +349,21 @@ SSPTSteel::diffusiveTransformation(
       cr = r2 / r3;
       cs = r2 / r1;
       ct = r1 / r3;
-      cp = cs*(ct*(cr-ct)*(x3-x2) - (1.0-cr)*(x2-x1));
+      cp = cs*(ct*(cr-ct)*(fraction3-fraction2) - (1.0-cr)*(fraction2-fraction1));
       cq = (ct-1.0)*(cr-1.0)*(cs-1.0);
 
-      x = x2 + cp / cq;
+      fraction = fraction2 + cp / cq;
 
       // Bisection method if outside bounds
-      if( !((x > x1 && x < x2 && r1*r2 < 0.) || (x > x2 && x < x3 && r2*r3 < 0.)) )
+      if (!((fraction > fraction1 && fraction < fraction2 && r1*r2 < 0.) 
+          || (fraction > fraction2 && fraction < fraction3 && r2*r3 < 0.)))
         if( (r1 < 0. && r2 > 0.) || (r1 > 0. && r2 < 0.) )
-          x = 0.5 * (x1 + x2);
+          fraction = 0.5 * (fraction1 + fraction2);
         else
-          x = 0.5 * (x2 + x3);
+          fraction = 0.5 * (fraction2 + fraction3);
   
       // Check convergence
-      r = diffusiveTransformationResidual(x0, x, dt, fun_tc);
+      r = diffusiveTransformationResidual(fraction0, fraction, dt, fun_tc);
 
       if( std::abs(r) < _tolerance )
         break;
@@ -381,127 +371,114 @@ SSPTSteel::diffusiveTransformation(
         mooseError("Diffuse transformation did not converge");
 
       // Update points
-      if( x > x1 && x < x2)
+      if( fraction > fraction1 && fraction < fraction2)
       {
-        x3 = x2;
+        fraction3 = fraction2;
         r3 = r2;
       }
       else
       {
-        x1 = x2;
+        fraction1 = fraction2;
         r1 = r2;
       }
 
-      x2 = x;
+      fraction2 = fraction;
       r2 = r;
     }
 
-    dx = x - x0;
+    dfraction = fraction - fraction0;
   }
 
-  return {dx, dnuc};
+  return {dfraction, dnucleation};
 }
-
 
 Real
-SSPTSteel::diffusiveTransformationResidual(
-  Real x0,
-  Real x,
-  Real dt,
-  Real fun_tc
-)
+SSPTSteel::diffusiveTransformationResidual(Real fraction0,
+                                           Real fraction,
+                                           Real dt,
+                                           Real fun_tc)
 {
-  return x - x0 - dt * fun_tc * std::pow(x, 0.4*(1.0-x)) * std::pow(1.0 - x, 0.4*x);
+  return fraction - fraction0 - dt * fun_tc * std::pow(fraction, 0.4*(1.0-fraction)) * std::pow(1.0 - fraction, 0.4*fraction);
 }
 
-
 Real 
-SSPTSteel::funTc(
-  Phase phase,
-  Real temp
-)
+SSPTSteel::funTc(Phase phase, Real temperature)
 {
-  Real Gsize_astm = 2.88539 * std::log(254.0/_Gsize[_qp]) + 1.0;
+  Real Gsize_astm = 2.88539 * std::log(254.0/_grain_size[_qp]) + 1.0;
 
   Gsize_astm = 7.163588007638449;
 
-  return std::pow(_temp_upper[phase]-temp, _ucool_exponent[phase]) 
-    * std::exp(-1.384e4/(temp+273.15)) 
-    * std::pow(2.0, _Gsize_factor[phase]*Gsize_astm) / _fcomp[phase];
+  return std::pow(_temperature_upper[phase]-temperature, _ucool_exponent[phase]) 
+    * std::exp(-1.384e4/(temperature+273.15)) 
+    * std::pow(2.0, _grain_size_factor[phase]*Gsize_astm) / _fcomp[phase];
 }
-
 
 Real
 SSPTSteel::martensiteTransformation()
 {
-  return (_xa_old[_qp] + _xm_old[_qp]) * 
-    (1.0 - exp(-1.1e-2*(_temp_upper[martensite] - _temp[_qp]))) - _xm_old[_qp];
+  return ((*_fractions_old[austenite])[_qp] + (*_fractions_old[martensite])[_qp]) * 
+    (1.0 - exp(-1.1e-2*(_temperature_upper[martensite] - _temperature[_qp]))) - (*_fractions_old[martensite])[_qp];
 }
-
 
 bool
 SSPTSteel::checkTemperatureRange(
   Phase phase
 )
 {
-  return (_temp[_qp] > _temp_lower[phase] && _temp[_qp] <= _temp_upper[phase]) 
-    || (_temp_old[_qp] > _temp_lower[phase] && _temp_old[_qp] <= _temp_upper[phase]);
+  return (_temperature[_qp] > _temperature_lower[phase] && _temperature[_qp] <= _temperature_upper[phase]) 
+    || (_temperature_old[_qp] > _temperature_lower[phase] && _temperature_old[_qp] <= _temperature_upper[phase]);
 }
 
-
 std::tuple<Real,Real> 
-SSPTSteel::splitIncrementHeating(
-  Phase phase
-)
+SSPTSteel::splitIncrementHeating(Phase phase)
 {
-  Real temp, dt;
+  Real temperature, dt;
 
   // Lower bound
-  if( _temp_old[_qp] < _temp_lower[phase] )
+  if( _temperature_old[_qp] < _temperature_lower[phase] )
   {
-    temp = _temp[_qp];
-    dt = (_temp[_qp] - _temp_lower[phase]) / (_temp[_qp] - _temp_old[_qp]) * _dt;
+    temperature = _temperature[_qp];
+    dt = (_temperature[_qp] - _temperature_lower[phase]) / (_temperature[_qp] - _temperature_old[_qp]) * _dt;
   }
   // Upper bound
-  else if( _temp[_qp] > _temp_upper[phase] )
+  else if( _temperature[_qp] > _temperature_upper[phase] )
   {
-    temp = _temp_upper[phase];
-    dt = (_temp_upper[phase] - _temp_old[_qp]) / (_temp[_qp] - _temp_old[_qp]) * _dt;
+    temperature = _temperature_upper[phase];
+    dt = (_temperature_upper[phase] - _temperature_old[_qp]) / (_temperature[_qp] - _temperature_old[_qp]) * _dt;
   }
   else
   {
-    temp = _temp[_qp];
+    temperature = _temperature[_qp];
     dt = _dt;
   }
 
-  return {temp, dt};
+  return {temperature, dt};
 }
 
-
 std::tuple<Real,Real> 
-SSPTSteel::splitIncrementCooldown(
-  Phase phase
-)
+SSPTSteel::splitIncrementCooldown(Phase phase)
 {
-  Real temp, dt;
+  Real temperature, dt;
 
   // Upper bound
-  if( _temp_old[_qp] > _temp_upper[phase] )
+  if( _temperature_old[_qp] > _temperature_upper[phase] )
   {
-    temp = _temp[_qp];
-    dt = (_temp_upper[phase] - _temp[_qp]) / (_temp_old[_qp] - _temp[_qp]) * _dt;
+    temperature = _temperature[_qp];
+    dt = (_temperature_upper[phase] - _temperature[_qp]) / (_temperature_old[_qp] - _temperature[_qp]) * _dt;
   }
   // Lower bound
-  else if( _temp[_qp] < _temp_lower[phase] )
+  else if( _temperature[_qp] < _temperature_lower[phase] )
   {
-    temp = _temp_lower[phase];
-    dt = (_temp_old[_qp] - _temp_lower[phase]) / (_temp_old[_qp] - _temp[_qp]) * _dt;
+    temperature = _temperature_lower[phase];
+    dt = (_temperature_old[_qp] - _temperature_lower[phase]) / (_temperature_old[_qp] - _temperature[_qp]) * _dt;
   }
   else
   {
-    temp = _temp[_qp];
+    temperature = _temperature[_qp];
     dt = _dt;
   }
 
-  return {temp, dt};
+  return {temperature, dt};
+}
+
 }

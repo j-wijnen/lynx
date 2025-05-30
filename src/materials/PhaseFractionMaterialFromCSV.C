@@ -1,11 +1,23 @@
+//* This file is part of Lynx, 
+//* an open-source application for the simulation  
+//* of mechanics and multi-physics problems
+//* https://github.com/j-wijnen/lynx
+//*
+//* Lynx is powered by the MOOSE Framework
+//* https://www.mooseframework.org
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
 #include "PhaseFractionMaterialFromCSV.h"
 #include "DelimitedFileReader.h"
 #include "general_static_cast.h"
 
+namespace lynx
+{
 
 registerMooseObject("LynxApp", PhaseFractionMaterialFromCSV);
 registerMooseObject("LynxApp", ADPhaseFractionMaterialFromCSV);
-
 
 template<bool is_ad>
 InputParameters
@@ -21,7 +33,6 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::validParams()
   return params;
 }
 
-
 template<bool is_ad>
 PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
   const InputParameters & parameters
@@ -36,11 +47,11 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
   _temperature(coupledGenericValue<is_ad>("variable")),
 
   // Required phase fractions
-  _xf(getMaterialProperty<Real>("frac_f")),
-  _xp(getMaterialProperty<Real>("frac_p")),
-  _xb(getMaterialProperty<Real>("frac_b")),
-  _xm(getMaterialProperty<Real>("frac_m")),
-  _xa(getMaterialProperty<Real>("frac_a"))
+  _fraction_f(getMaterialProperty<Real>("fraction_ferrite")),
+  _fraction_p(getMaterialProperty<Real>("fraction_pearlite")),
+  _fraction_b(getMaterialProperty<Real>("fraction_bainite")),
+  _fraction_m(getMaterialProperty<Real>("fraction_martensite")),
+  _fraction_a(getMaterialProperty<Real>("fraction_austenite"))
 
 {
   auto nprops =  _prop_names.size();
@@ -64,12 +75,11 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
     readPropertiesSingleFile();
 }
 
-
 template<bool is_ad>
 void
 PhaseFractionMaterialFromCSVTempl<is_ad>::readPropertiesMultipleFiles()
 {
-  for(unsigned int iprop = 0; iprop < _prop_names.size(); ++iprop)
+  for (int iprop = 0; iprop < _prop_names.size(); ++iprop)
   {
     // Declare property
     _properties.push_back(&declareGenericProperty<Real, is_ad>(_prop_names[iprop]));
@@ -89,13 +99,12 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::readPropertiesMultipleFiles()
 
     // Create one interpolation array so that we dont have to interpolate for every phase
     std::vector<Real> interp_values(ndata);
-    for( int i = 0; i < ndata; ++i )
+    for (int i = 0; i < ndata; ++i)
       interp_values[i] = (Real) i;
 
     _piecewise_funcs.push_back(GenericLinearInterpolation(temperature, interp_values));  
   }
 }
-
 
 template<bool is_ad>
 void
@@ -115,7 +124,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::readPropertiesSingleFile()
 
   _piecewise_funcs.push_back(GenericLinearInterpolation(temperature, interp_values)); 
 
-  for(unsigned int iprop = 0; iprop < _prop_names.size(); ++iprop)
+  for (int iprop = 0; iprop < _prop_names.size(); ++iprop)
   {
     // Declare property
     auto prop_name = _prop_names[iprop];
@@ -129,7 +138,6 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::readPropertiesSingleFile()
   }
 }
 
-
 template<bool is_ad>
 void
 PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpProperties()
@@ -140,12 +148,11 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpProperties()
     computeQpPropertiesSingleFile();
 }
 
-
 template<bool is_ad>
 void
 PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpPropertiesMultipleFiles()
 {
-  for(unsigned int iprop = 0; iprop < _properties.size(); ++iprop)
+  for (int iprop = 0; iprop < _properties.size(); ++iprop)
   {
     auto interp_value = _piecewise_funcs[iprop].sample(_temperature[_qp]);
 
@@ -155,14 +162,13 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpPropertiesMultipleFiles()
     auto w = interp_value - static_cast<Real>(ii);
 
     // Set actual property
-    (*_properties[iprop])[_qp] = ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) * _xf[_qp]
-      + ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj]) * _xp[_qp]
-      + ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj]) * _xb[_qp]
-      + ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj]) * _xm[_qp]
-      + ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]) * _xa[_qp];
+    (*_properties[iprop])[_qp] = ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) * _fraction_f[_qp]
+      + ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj]) * _fraction_p[_qp]
+      + ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj]) * _fraction_b[_qp]
+      + ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj]) * _fraction_m[_qp]
+      + ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]) * _fraction_a[_qp];
   }
 }
-
 
 template<bool is_ad>
 void
@@ -177,10 +183,12 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpPropertiesSingleFile()
 
   for(unsigned int iprop = 0; iprop < _properties.size(); ++iprop)
   {
-    (*_properties[iprop])[_qp] = ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) * _xf[_qp]
-      + ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj]) * _xp[_qp]
-      + ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj]) * _xb[_qp]
-      + ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj]) * _xm[_qp]
-      + ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]) * _xa[_qp];
+    (*_properties[iprop])[_qp] = ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) * _fraction_f[_qp]
+      + ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj]) * _fraction_p[_qp]
+      + ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj]) * _fraction_b[_qp]
+      + ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj]) * _fraction_m[_qp]
+      + ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]) * _fraction_a[_qp];
   }
+}
+
 }

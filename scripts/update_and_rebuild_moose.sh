@@ -3,6 +3,8 @@ then
   export MOOSE_JOBS=1
 fi
 
+echo "Number of cpus " $MOOSE_JOBS
+
 export CC=mpicc 
 export CXX=mpicxx 
 export FC=mpif90
@@ -19,7 +21,7 @@ export FCFLAGS=$FLAGS
 export FFLAGS=$FLAGS
 
 cd $MOOSE_DIR/test
-make cleanall
+#make cleanall
 git pull --recurse-submodules
 
 cd $MOOSE_DIR/scripts
