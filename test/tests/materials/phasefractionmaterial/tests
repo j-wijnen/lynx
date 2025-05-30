@@ -1,0 +1,12 @@
+[Tests]
+  [single]
+    type = 'Exodiff'
+    input = 'csv_single_file.i'
+    exodiff = 'csv_single_file_out.e'
+  []
+  [multiple]
+    type = 'Exodiff'
+    input = 'csv_multiple_file.i'
+    exodiff = 'csv_multiple_file_out.e'
+  []
+[]
