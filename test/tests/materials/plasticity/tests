@@ -1,8 +1,13 @@
 [Tests]
   design = 'platicity.md'
-  [test]
+  [plasticity]
     type = 'Exodiff'
     input = 'smallstrain.i'
     exodiff = 'smallstrain_out.e'
+  []
+  [variable_yield_stress]
+    type = 'Exodiff'
+    input = 'variable_yield_stress.i'
+    exodiff = 'variable_yield_stress_out.e'
   []
 []

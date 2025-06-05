@@ -43,8 +43,10 @@ protected:
 
   virtual void computeQpPropertiesSingleFile();
 
+  // Parameters
   const std::vector<std::string> _prop_names;
   const std::vector<std::string> _prop_files;
+  bool _inverse_average;
 
   const GenericVariableValue<is_ad> & _temperature;
 
@@ -70,7 +72,6 @@ protected:
     GenericLinearInterpolation;
 
   std::vector<GenericLinearInterpolation> _piecewise_funcs;
-
 };
 
 typedef PhaseFractionMaterialFromCSVTempl<false> PhaseFractionMaterialFromCSV;

@@ -14,12 +14,16 @@ IsotropicPlasticStress::validParams()
   params.addClassDescription("This material computes the stress for small strain"
     "isotropic von Mises plasticity.");
     
-  MooseEnum hardeningLaw("NONE LINEAR POWERLAW", "NONE");
+  MooseEnum hardeningLaw("NONE LINEAR POWERLAW VARIABLE_POWERLAW", "NONE");
   params.addParam<MooseEnum>("hardening_law", hardeningLaw, "Strain formulation");
-  params.addRequiredParam<Real>("yield_stress", "The initial yield stress of the material.");
+  params.addParam<Real>("initial_yield_stress", 0.0, "The initial yield stress of the material.");
   params.addParam<Real>("hardening_modulus", 0.0, "The hardenings modulus (linear hardening)");
   params.addParam<Real>("hardening_exponent", 0.0, "The hardening exponent (powerlaw hardening)");
   params.addParam<Real>("tolerance", 1e-8, "Tolerance of internal loop.");
+  params.addParam<MaterialPropertyName>("initial_yield_stress_name", "initial_yield_stress", "Property name of yield stress");
+  params.addParam<MaterialPropertyName>("hardening_modulus_name", "hardening_modulus", "Property name of hardening modulus");
+  params.addParam<MaterialPropertyName>("hardening_exponent_name", "hardening_exponent", "Property name of hardening exponent");
+
   return params;
 }
 
@@ -34,38 +38,55 @@ IsotropicPlasticStress::IsotropicPlasticStress(
 
   // Declared material properties
   _plastic_strain(declareProperty<RankTwoTensor>(_base_name + "plastic_strain")),
-  _effective_plastic_strain(declareProperty<Real>(_base_name + "equivalent_plastic_strain")),
+  _effective_plastic_strain(declareProperty<Real>(_base_name + "plastic_multiplier")),
   _yield_stress(declareProperty<Real>(_base_name + "yield_stress")),
 
   // Stateful properties
   _plastic_strain_old(getMaterialPropertyOld<RankTwoTensor>(_base_name + "plastic_strain")),
-  _effective_plastic_strain_old(getMaterialPropertyOld<Real>(_base_name + "equivalent_plastic_strain")),
+  _effective_plastic_strain_old(getMaterialPropertyOld<Real>(_base_name + "plastic_multiplier")),
 
+  // Yield parameters
   _hardening_law(getParam<MooseEnum>("hardening_law")),
-  _yield_stress0(getParam<Real>("yield_stress")),
+  _initial_yield_stress(getParam<Real>("initial_yield_stress")),
   _hardening_modulus(getParam<Real>("hardening_modulus")),
   _hardening_exponent(getParam<Real>("hardening_exponent")),
-  _tolerance(getParam<Real>("tolerance"))
+  _tolerance(getParam<Real>("tolerance")),
+
+  // Yield parameters for variable properties
+  _initial_yield_stress_prop(getOptionalMaterialProperty<Real>("initial_yield_stress_name")),
+  _hardening_modulus_prop(getOptionalMaterialProperty<Real>("hardening_modulus_name")),
+  _hardening_exponent_prop(getOptionalMaterialProperty<Real>("hardening_exponent_name"))
 {
   // Assign hardening law
   switch(_hardening_law)
   {
     case 0: // NONE
-      _hardening = std::make_unique<HardeningLaw>(_yield_stress0);
+      if(!parameters.isParamSetByUser("initial_yield_stress"))
+        mooseError("`yield_stress` is not set");
+      _hardening = std::make_unique<LinearHardening>(_initial_yield_stress, 0.0);
       break;
     case 1: // LINEAR
+      if(!parameters.isParamSetByUser("initial_yield_stress"))
+        mooseError("`yield_stress` is not set");
       if(!parameters.isParamSetByUser("hardening_modulus"))
         mooseError("`hardening_modulus` is not set");
-      _hardening = std::make_unique<LinearHardening>(_yield_stress0, _hardening_modulus);
+      _hardening = std::make_unique<LinearHardening>(_initial_yield_stress, _hardening_modulus);
       break;
     case 2: // POWERLAW
+      if(!parameters.isParamSetByUser("initial_yield_stress"))
+        mooseError("`yield_stress` is not set");
       if(!parameters.isParamSetByUser("hardening_modulus"))
         mooseError("`hardening_modulus` is not set");
       if(!parameters.isParamSetByUser("hardening_exponent"))
         mooseError("`hardening_exponent` is not set");
-      _hardening = std::make_unique<PowerLawHardening>(_yield_stress0, _hardening_modulus, _hardening_exponent);
+      _hardening = std::make_unique<PowerLawHardening>(_initial_yield_stress, _hardening_modulus, _hardening_exponent);
+      break;
+    case 3: // VARIABLE_POWERLAW
+      _hardening = std::make_unique<VariablePowerLawHardening>(
+        _initial_yield_stress_prop,  _hardening_modulus_prop, _hardening_exponent_prop, _qp);
       break;
   }
+
 }
 
 void IsotropicPlasticStress::initialSetup()
@@ -75,7 +96,7 @@ void IsotropicPlasticStress::initialSetup()
   // Check if the material is isotropic
   if(!hasGuaranteedMaterialProperty(_base_name + "elasticity_tensor", Guarantee::ISOTROPIC))
     mooseError("The elasticity tensor must be isotropic.");
-}
+ }
 
 void
 IsotropicPlasticStress::initQpStatefulProperties()

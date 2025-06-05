@@ -1,7 +1,7 @@
 #include "IADHenckyStress.h"
 #include "RankFourTensor.h"
 #include "RankTwoTensor.h"
-#include "ADTensorUtils.h"
+#include "MooseTensorUtils.h"
 
 registerMooseObject("LynxApp", IADHenckyStress);
 

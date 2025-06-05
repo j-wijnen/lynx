@@ -48,10 +48,15 @@ protected:
 
   // Yield parameters
   const MooseEnum _hardening_law;
-  const Real _yield_stress0;
+  const Real _initial_yield_stress;
   const Real _hardening_modulus;
   const Real _hardening_exponent;
   const Real _tolerance;
+
+  // Yield parameters for variable properties
+  const OptionalMaterialProperty<Real> & _initial_yield_stress_prop;
+  const OptionalMaterialProperty<Real> & _hardening_modulus_prop;
+  const OptionalMaterialProperty<Real> & _hardening_exponent_prop;
 
   std::unique_ptr<HardeningLaw> _hardening;
 

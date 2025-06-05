@@ -1,0 +1,13 @@
+[Tests]
+  design = 'welding.md'
+  [expansion]
+    type = 'Exodiff'
+    input = 'expansion.i'
+    exodiff = 'expansion_out.e'
+  []
+  [trip]
+    type = 'Exodiff'
+    input = 'trip.i'
+    exodiff = 'trip_out.e'
+  []
+[]

@@ -27,6 +27,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::validParams()
 
   params.addRequiredParam<std::vector<std::string>>("prop_names", "Properties to be defined.");
   params.addRequiredParam<std::vector<std::string>>("prop_files", "CSV files with phase properties.");
+  params.addParam<bool>("inverse_average", false, "Compute phase averages with Ruess bounds");
 
   params.addRequiredCoupledVar("variable", "The temperature variable that will be used for interpolation.");
 
@@ -42,6 +43,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
   // Parameters
   _prop_names(getParam<std::vector<std::string>>("prop_names")),
   _prop_files(getParam<std::vector<std::string>>("prop_files")),
+  _inverse_average(getParam<bool>("inverse_average")),
 
   // Coupled temperature variable
   _temperature(coupledGenericValue<is_ad>("variable")),
@@ -157,16 +159,28 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpPropertiesMultipleFiles()
     auto interp_value = _piecewise_funcs[iprop].sample(_temperature[_qp]);
 
     // Calculate indices and interpolation weight of phase arrays
-    unsigned int ii = general_static_cast<unsigned int>(interp_value);
-    unsigned int jj = ii +1;
+    int ii = general_static_cast<int>(interp_value);
+    int jj = ii +1;
     auto w = interp_value - static_cast<Real>(ii);
 
-    // Set actual property
-    (*_properties[iprop])[_qp] = ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) * _fraction_f[_qp]
-      + ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj]) * _fraction_p[_qp]
-      + ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj]) * _fraction_b[_qp]
-      + ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj]) * _fraction_m[_qp]
-      + ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]) * _fraction_a[_qp];
+    if (_inverse_average)
+    {
+      (*_properties[iprop])[_qp] = 1.0 / (
+        _fraction_f[_qp] / ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) 
+        + _fraction_p[_qp] / ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj])
+        + _fraction_b[_qp] / ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj])
+        + _fraction_m[_qp] / ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj])
+        + _fraction_a[_qp] / ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]));
+    }
+    else
+    {
+      (*_properties[iprop])[_qp] = 
+        ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) * _fraction_f[_qp]
+        + ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj]) * _fraction_p[_qp]
+        + ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj]) * _fraction_b[_qp]
+        + ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj]) * _fraction_m[_qp]
+        + ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]) * _fraction_a[_qp];
+    }
   }
 }
 
@@ -177,18 +191,31 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpPropertiesSingleFile()
   auto interp_value = _piecewise_funcs[0].sample(_temperature[_qp]);
 
   // Calculate indices and interpolation weight of phase arrays
-  unsigned int ii = general_static_cast<unsigned int>(interp_value);
-  unsigned int jj = ii +1;
+  int ii = general_static_cast<int>(interp_value);
+  int jj = ii +1;
   auto w = interp_value - static_cast<Real>(ii);
 
-  for(unsigned int iprop = 0; iprop < _properties.size(); ++iprop)
+  for (int iprop = 0; iprop < _properties.size(); ++iprop)
   {
-    (*_properties[iprop])[_qp] = ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) * _fraction_f[_qp]
-      + ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj]) * _fraction_p[_qp]
-      + ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj]) * _fraction_b[_qp]
-      + ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj]) * _fraction_m[_qp]
-      + ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]) * _fraction_a[_qp];
+    if (_inverse_average)
+    {
+      (*_properties[iprop])[_qp] = 1.0 / (
+        _fraction_f[_qp] / ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) 
+        + _fraction_p[_qp] / ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj])
+        + _fraction_b[_qp] / ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj])
+        + _fraction_m[_qp] / ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj])
+        + _fraction_a[_qp] / ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]));
+    }
+    else
+    {
+      (*_properties[iprop])[_qp] = 
+        ((1.0-w)*_ferrite[iprop][ii] + w*_ferrite[iprop][jj]) * _fraction_f[_qp]
+        + ((1.0-w)*_pearlite[iprop][ii] + w*_pearlite[iprop][jj]) * _fraction_p[_qp]
+        + ((1.0-w)*_bainite[iprop][ii] + w*_bainite[iprop][jj]) * _fraction_b[_qp]
+        + ((1.0-w)*_martensite[iprop][ii] + w*_martensite[iprop][jj]) * _fraction_m[_qp]
+        + ((1.0-w)*_austenite[iprop][ii] + w*_austenite[iprop][jj]) * _fraction_a[_qp];
+    }
   }
 }
 
-}
+} // end namespace

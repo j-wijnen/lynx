@@ -1,7 +1,7 @@
 #include "StVenantKirchhoffStress.h"
 #include "RankFourTensor.h"
 #include "RankTwoTensor.h"
-#include "FastorTensor.h"
+#include "FastorTensorUtils.h"
 
 using Fastor::trans;
 using Fastor::einsum;

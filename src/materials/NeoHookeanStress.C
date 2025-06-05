@@ -1,7 +1,7 @@
 #include "NeoHookeanStress.h"
 #include "RankFourTensor.h"
 #include "RankTwoTensor.h"
-#include "FastorTensor.h"
+#include "FastorTensorUtils.h"
 
 using Fastor::trace;
 using Fastor::det;

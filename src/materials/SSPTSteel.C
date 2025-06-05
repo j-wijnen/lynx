@@ -25,7 +25,7 @@ SSPTSteel::validParams()
 
   params.addParam<Real>("fraction_austenite", 0.0, "Initial austenite fraction");
   params.addParam<Real>("fraction_ferrite", 0.0, "Initial ferrite fraction");
-  params.addParam<Real>("fraction_pearite", 0.0, "Initial pearlite fraction");
+  params.addParam<Real>("fraction_pearlite", 0.0, "Initial pearlite fraction");
   params.addParam<Real>("fraction_bainite", 0.0, "Initial bainite fraction");
   params.addParam<Real>("fraction_martensite", 0.0, "Initial martensite fraction");
 
@@ -107,10 +107,10 @@ SSPTSteel::SSPTSteel(const InputParameters & parameters)
   _comp_Cu(getParam<Real>("comp_Cu")),
 
   // Transformation temperatures
-  _temperature_Ae3(getParam<Real>("temp_Ae3")),
-  _temperature_Ae1(getParam<Real>("temp_Ae1")),
-  _temperature_Bs(getParam<Real>("temp_Bs")),
-  _temperature_Ms(getParam<Real>("temp_Ms")),
+  _temperature_Ae3(getParam<Real>("temperature_Ae3")),
+  _temperature_Ae1(getParam<Real>("temperature_Ae1")),
+  _temperature_Bs(getParam<Real>("temperature_Bs")),
+  _temperature_Ms(getParam<Real>("temperature_Ms")),
 
   // Austenite grain sizes
   _grain_size_init(getParam<Real>("grain_size_init")),
@@ -277,7 +277,7 @@ SSPTSteel::austeniteTransformation()
   if( temperature <= _temperature_Ae3 )
   {
     fraction_eq = (temperature - _temperature_Ae1) / (_temperature_Ae3 - _temperature_Ae1);
-    tau = 1.0 - 0.8*x_eq;
+    tau = 1.0 - 0.8*fraction_eq;
   }
   else 
   {

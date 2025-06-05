@@ -68,7 +68,7 @@
   [stress]
     type = PFFIsotropicPlasticStress
     hardening_law = powerlaw
-    yield_stress = 200
+    initial_yield_stress = 200
     hardening_modulus = 210e3
     hardening_exponent = 0.1
     beta = 0.1

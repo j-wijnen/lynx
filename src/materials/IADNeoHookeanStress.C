@@ -1,8 +1,8 @@
 #include "IADNeoHookeanStress.h"
 #include "RankFourTensor.h"
 #include "RankTwoTensor.h"
-#include "FastorTensor.h"
-#include "ADTensorUtils.h"
+#include "FastorTensorUtils.h"
+#include "MooseTensorUtils.h"
 
 using Fastor::trace;
 using Fastor::det;

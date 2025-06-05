@@ -11,30 +11,30 @@
 
 #pragma once
 
-#include "Material.h"
+#include <array>
+#include "ComputeEigenstrainBase.h"
 
-namespace lynx {
+namespace lynx
+{
 
 /**
- * Transfers a variable to a material property
+ * Calculates the volumetric expansion of the material
+ * based on changes in density
  */
-class MaterialFromVariable : public Material
+
+class VolumetricExpansionFromDensity : public ComputeEigenstrainBase
 {
 public:
   static InputParameters validParams();
 
-  MaterialFromVariable(const InputParameters & parameters);
+  VolumetricExpansionFromDensity(const InputParameters& params);
 
 protected:
-  virtual void initQpStatefulProperties() override;
+  virtual void computeQpEigenstrain() override;
 
-  virtual void computeQpProperties() override;
+  const MaterialProperty<Real> & _density;
 
-  // Coupled variables
-  const VariableValue & _var;
-
-  // Declared properties
-  MaterialProperty<Real> & _prop;
+  const Real _reference_density;
 };
 
-} // end namespace
+}
