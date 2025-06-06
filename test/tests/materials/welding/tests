@@ -10,4 +10,10 @@
     input = 'trip.i'
     exodiff = 'trip_out.e'
   []
+  [sspt]
+    type = 'Exodiff'
+    input = 'sspt_ferrite.i'
+    exodiff = 'sspt_ferrite_out.e'
+    requirement = 'Ferrite transformation'
+  []
 []

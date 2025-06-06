@@ -11,8 +11,7 @@
 
 #include "SSPTSteel.h"
 
-namespace lynx
-{
+namespace lynx {
 
 registerMooseObject("LynxApp", SSPTSteel);
 
@@ -49,7 +48,7 @@ SSPTSteel::validParams()
   params.addParam<Real>("temperature_Bs", 0.0, "Bainite transformation temperature");
   params.addParam<Real>("temperature_Ms", 0.0, "Martensite transformation temperature");
 
-  params.addParam<Real>("grain_size_init", 30.0, "Initial austenite grain size");
+  params.addParam<Real>("grain_size_initial", 30.0, "Initial austenite grain size");
   params.addParam<Real>("grain_size_min", 30.0, "Minimum austenite grain size");
   params.addParam<Real>("grain_size_max", 30.0, "Maximum austenite grain size");
 
@@ -113,7 +112,7 @@ SSPTSteel::SSPTSteel(const InputParameters & parameters)
   _temperature_Ms(getParam<Real>("temperature_Ms")),
 
   // Austenite grain sizes
-  _grain_size_init(getParam<Real>("grain_size_init")),
+  _grain_size_init(getParam<Real>("grain_size_initial")),
   _grain_size_min(getParam<Real>("grain_size_min")),
   _grain_size_max(getParam<Real>("grain_size_max"))
 {
@@ -212,7 +211,7 @@ SSPTSteel::computeQpProperties()
 
     // Reset initial grain size if first austenitization inc
     if( _temperature_old[_qp] <= _temperature_lower[austenite] )
-      dgrain_size = ((*_fractions_old[austenite])[_qp] - 1.0) * _grain_size_old[_qp] 
+      dgrain_size = (*_fractions_old[austenite])[_qp] * _grain_size_old[_qp] 
         + (1.0 - (*_fractions_old[austenite])[_qp])*_grain_size_min;
     
     dgrain_size += grainGrowth();
@@ -405,8 +404,6 @@ Real
 SSPTSteel::funTc(Phase phase, Real temperature)
 {
   Real Gsize_astm = 2.88539 * std::log(254.0/_grain_size[_qp]) + 1.0;
-
-  Gsize_astm = 7.163588007638449;
 
   return std::pow(_temperature_upper[phase]-temperature, _ucool_exponent[phase]) 
     * std::exp(-1.384e4/(temperature+273.15)) 

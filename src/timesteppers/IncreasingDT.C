@@ -47,34 +47,22 @@ IncreasingDT::computeInitialDT()
 Real
 IncreasingDT::computeDT()
 {
-  // Initial dt0
-  if( _first_inc )
+  ++_iinc;
+
+  // Initial dt
+  if (_first_inc )
   {
     _first_inc = false;
     _second_inc = true;
     _iinc = 1;
     return _dt;
   }
-  // // Change to default dt after first increment
-  // else if (_second_inc)
-  // {
-  //   _second_inc = false;
-  //   if (getCurrentDT() < _dt)
-  //   {
-  //     _iinc = 1;
-  //     return _dt;
-  //   }
-  // }
-
-  // Count increments since last change
-  ++_iinc;
-
   // Increase dt if conditions satisfied
-  if( _iinc > _ninc && getCurrentDT() < _dt_max )
+  else if (_iinc > _ninc && getCurrentDT() < _dt_max)
   {
     _iinc = 1;
     return std::min(_ratio * getCurrentDT(), _dt_max);
   }
-  else
-    return getCurrentDT();
+
+  return getCurrentDT();
 }

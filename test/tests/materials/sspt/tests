@@ -1,9 +1,0 @@
-[Tests]
-  design = 'SSPT.md'
-  [test]
-    type = 'Exodiff'
-    input = 'sspt_ferrite.i'
-    exodiff = 'sspt_ferrite_out.e'
-    requirement = 'Ferrite transformation'
-  []
-[]
