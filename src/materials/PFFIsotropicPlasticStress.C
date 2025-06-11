@@ -99,7 +99,7 @@ PFFIsotropicPlasticStress::computeQpStress()
   _Jacobian_mult[_qp] += 2.0 * g * shear_modulus * IdentityFourDev;
 
   // Check for yielding
-  _yield_stress[_qp] = _hardening->getValue(_effective_plastic_strain_old[_qp]);
+  _yield_stress[_qp] = _hardening->getValue(_plastic_multiplier_old[_qp]);
   if(stress_eq > gp * _yield_stress[_qp])
   {
     // Return map
@@ -110,7 +110,7 @@ PFFIsotropicPlasticStress::computeQpStress()
 
     // Update relevant strains, stresses and jacobian
     _plastic_strain[_qp] = _plastic_strain_old[_qp] + _sqrt32 * dplastic_mult * N;
-    _effective_plastic_strain[_qp] = _effective_plastic_strain_old[_qp] + dplastic_mult;
+    _plastic_multiplier[_qp] = _plastic_multiplier_old[_qp] + dplastic_mult;
     _elastic_strain[_qp] = _mechanical_strain[_qp] - _plastic_strain[_qp];
 
     elastic_strain_dev = _elastic_strain[_qp].deviatoric();
@@ -157,5 +157,5 @@ PFFIsotropicPlasticStress::computeReturnDerivative(Real dplastic_mult)
   Real gp = _beta * g + 1. - _beta;
 
   return - 3. * g * getIsotropicShearModulus(_elasticity_tensor[_qp])
-    - gp * _hardening->getDerivative(_effective_plastic_strain_old[_qp] + dplastic_mult);
+    - gp * _hardening->getDerivative(_plastic_multiplier_old[_qp] + dplastic_mult);
 }

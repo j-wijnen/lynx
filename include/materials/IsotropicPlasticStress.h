@@ -39,12 +39,12 @@ protected:
 
   // Declared material properties
   MaterialProperty<RankTwoTensor> & _plastic_strain;
-  MaterialProperty<Real> & _effective_plastic_strain;
+  MaterialProperty<Real> & _plastic_multiplier;
   MaterialProperty<Real> & _yield_stress;
 
   // Stateful material properties
   const MaterialProperty<RankTwoTensor> & _plastic_strain_old;
-  const MaterialProperty<Real> & _effective_plastic_strain_old;
+  const MaterialProperty<Real> & _plastic_multiplier_old;
 
   // Yield parameters
   const MooseEnum _hardening_law;

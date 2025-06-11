@@ -38,12 +38,12 @@ IsotropicPlasticStress::IsotropicPlasticStress(
 
   // Declared material properties
   _plastic_strain(declareProperty<RankTwoTensor>(_base_name + "plastic_strain")),
-  _effective_plastic_strain(declareProperty<Real>(_base_name + "plastic_multiplier")),
+  _plastic_multiplier(declareProperty<Real>(_base_name + "plastic_multiplier")),
   _yield_stress(declareProperty<Real>(_base_name + "yield_stress")),
 
   // Stateful properties
   _plastic_strain_old(getMaterialPropertyOld<RankTwoTensor>(_base_name + "plastic_strain")),
-  _effective_plastic_strain_old(getMaterialPropertyOld<Real>(_base_name + "plastic_multiplier")),
+  _plastic_multiplier_old(getMaterialPropertyOld<Real>(_base_name + "plastic_multiplier")),
 
   // Yield parameters
   _hardening_law(getParam<MooseEnum>("hardening_law")),
@@ -104,7 +104,7 @@ IsotropicPlasticStress::initQpStatefulProperties()
   ComputeStressBase::initQpStatefulProperties();
 
   _plastic_strain[_qp].zero();
-  _effective_plastic_strain[_qp] = 0.0;
+  _plastic_multiplier[_qp] = 0.0;
 }
 
 void 
@@ -121,7 +121,7 @@ IsotropicPlasticStress::computeQpStress()
   Real stress_eq = _sqrt32 * std::sqrt(stress_dev.doubleContraction(stress_dev));
 
   // Check for yielding
-  _yield_stress[_qp] = _hardening->getValue(_effective_plastic_strain_old[_qp]);
+  _yield_stress[_qp] = _hardening->getValue(_plastic_multiplier_old[_qp]);
   if(stress_eq > _yield_stress[_qp])
   {
     // Return map
@@ -131,7 +131,7 @@ IsotropicPlasticStress::computeQpStress()
     RankTwoTensor N = _sqrt32 * stress_dev / stress_eq;
 
     _plastic_strain[_qp] = _plastic_strain_old[_qp] + _sqrt32 * dplastic_mult * N;
-    _effective_plastic_strain[_qp] = _effective_plastic_strain_old[_qp] + dplastic_mult;
+    _plastic_multiplier[_qp] = _plastic_multiplier_old[_qp] + dplastic_mult;
     _elastic_strain[_qp] = _mechanical_strain[_qp] - _plastic_strain[_qp];
 
     _stress[_qp] = _elasticity_tensor[_qp] * _elastic_strain[_qp];
@@ -153,7 +153,7 @@ IsotropicPlasticStress::computeReturnMap(Real trial_stress)
 
   while(true)
   {
-    _yield_stress[_qp] = _hardening->getValue(_effective_plastic_strain_old[_qp] + dplastic_mult);
+    _yield_stress[_qp] = _hardening->getValue(_plastic_multiplier_old[_qp] + dplastic_mult);
     r = computeReturnResidual(trial_stress, dplastic_mult);
 
     if (abs(r) < _tolerance * _yield_stress[_qp])
@@ -184,5 +184,5 @@ Real
 IsotropicPlasticStress::computeReturnDerivative(Real dplastic_mult)
 {
   return - 3. * getIsotropicShearModulus(_elasticity_tensor[_qp])
-    - _hardening->getDerivative(_effective_plastic_strain_old[_qp] + dplastic_mult);
+    - _hardening->getDerivative(_plastic_multiplier_old[_qp] + dplastic_mult);
 }

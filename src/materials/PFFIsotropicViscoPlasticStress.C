@@ -55,7 +55,7 @@ PFFIsotropicViscoPlasticStress::computeReturnDerivative(Real dplastic_mult)
   Real g = _g ? _g[_qp] : 1.0;
   Real gp = _beta * g + 1. - _beta;
 
-  Real yield_stress_derivative = _hardening->getDerivative(_effective_plastic_strain_old[_qp] + dplastic_mult);
+  Real yield_stress_derivative = _hardening->getDerivative(_plastic_multiplier_old[_qp] + dplastic_mult);
   return - 3. * g * getIsotropicShearModulus(_elasticity_tensor[_qp])
     - gp * _viscosity_law->getDerivative(dplastic_mult, _dt, _yield_stress[_qp], yield_stress_derivative);
 }

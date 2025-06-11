@@ -20,24 +20,18 @@
   []
 []
 
-[Variables]
-  [strain_zz]
-  []
-[]
-
 [AuxVariables]
-  [fraction_ferrite]
-    family = lagrange
+  [temperature]
+    family = lagrange 
     order = first 
-    initial_condition = 0.0
   []
 []
 
 [AuxKernels]
-  [fraction_ferrite]
+  [temperature_kernel]
     type = FunctionAux
-    variable = fraction_ferrite
-    function = fraction_ferrite
+    variable = temperature
+    function = temperature_func
     execute_on = timestep_begin
   []
 []
@@ -47,22 +41,15 @@
     strain = small
     incremental = false
     add_variables = true
-    generate_output = 'plastic_strain_xx'
-    planar_formulation = weak_plane_stress 
-    out_of_plane_strain = strain_zz
+    generate_output = 'effective_plastic_strain'
   []
 []
 
 [Materials]
-  [fraction_ferrite]
-    type = MaterialFromVariable 
-    property = fraction_ferrite
-    coupled_variable = fraction_ferrite 
-  []
   [generic]
     type = GenericConstantMaterial
-    prop_names = 'fraction_pearlite fraction_bainite fraction_martensite'
-    prop_values = '0.0 0.0 0.0'
+    prop_names = 'fraction_ferrite fraction_pearlite fraction_bainite fraction_martensite'
+    prop_values = '0.0 0.0 0.0 0.0'
   []
   [elasticity]
     type = ComputeIsotropicElasticityTensor
@@ -71,17 +58,20 @@
   []
   [stress]
     type = WeldingPlasticStress
-    initial_yield_stress = 1e20
+    initial_yield_stress = 200.0
+    hardening_law = linear 
+    hardening_modulus = 10e3
+    temperature_variable = temperature 
+    annealing_temperature = 1400
     outputs = all
-    output_properties = plastic_multiplier
-    trip_parameter_ferrite = 1.0
+    output_properties = 'plastic_multiplier yield_stress'
   []
 []
 
 [Functions]
-  [fraction_ferrite]
+  [temperature_func]
     type = ParsedFunction
-    expression = 't'
+    expression = 't/0.5 * 1400'
   []
 []
 
@@ -99,10 +89,11 @@
     value = 0
   []
   [load_x]
-    type = NeumannBC
+    type = LinearRampDirichletBC
     variable = disp_x 
     boundary = right 
-    value = 1.0
+    value = 0.1
+    end_time = 1.0
   []
 []
 
@@ -112,9 +103,9 @@
 
 [Executioner]
   type = Transient
-  solve_type = Newton
+  solve_type = NEWTON
   end_time = 1
-  dt = 0.02
+  dt = 0.2
   petsc_options_iname = '-pc_type'
   petsc_options_value = 'lu'
   nl_abs_tol = 1.0e-8
@@ -123,7 +114,7 @@
 [Outputs]
   [out]
     type = Exodus 
-    time_step_interval = 50
+    time_step_interval = 1
   []
 
   print_linear_residuals = false

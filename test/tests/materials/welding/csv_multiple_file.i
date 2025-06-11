@@ -63,7 +63,7 @@
   []
   [phaseproperties]
     type = PhaseFractionMaterialFromCSV
-    variable = temperature
+    temperature_variable = temperature
     prop_names = 'density thermal_conductivity'
     prop_files = 'density.csv conductivity.csv'
   []

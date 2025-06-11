@@ -1,5 +1,9 @@
 [Tests]
-  design = 'welding.md'
+  [sspt]
+    type = 'Exodiff'
+    input = 'sspt_ferrite.i'
+    exodiff = 'sspt_ferrite_out.e'
+  []
   [expansion]
     type = 'Exodiff'
     input = 'expansion.i'
@@ -10,10 +14,19 @@
     input = 'trip.i'
     exodiff = 'trip_out.e'
   []
-  [sspt]
+  [annealing]
     type = 'Exodiff'
-    input = 'sspt_ferrite.i'
-    exodiff = 'sspt_ferrite_out.e'
-    requirement = 'Ferrite transformation'
+    input = 'annealing.i'
+    exodiff = 'annealing_out.e'
+  []
+  [csv_single]
+    type = 'Exodiff'
+    input = 'csv_single_file.i'
+    exodiff = 'csv_single_file_out.e'
+  []
+  [csv_multiple]
+    type = 'Exodiff'
+    input = 'csv_multiple_file.i'
+    exodiff = 'csv_multiple_file_out.e'
   []
 []

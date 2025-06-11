@@ -20,17 +20,20 @@ namespace lynx {
  * phase fractions
  */
 
-class IsotropicPlasticTRIPStress : public IsotropicPlasticStress
+class WeldingPlasticStress : public IsotropicPlasticStress
 {
 public:
   static InputParameters validParams();
 
-  IsotropicPlasticTRIPStress(const InputParameters & parameters);
+  WeldingPlasticStress(const InputParameters & parameters);
 
 protected:
   virtual void initQpStatefulProperties() override;
 
   virtual void computeQpStress() override;
+
+  // Coupled temperature variable
+  const VariableValue & _temperature;
 
   // Consumed properties
   const MaterialProperty<Real> & _fraction_f;
@@ -49,6 +52,9 @@ protected:
   const Real _trip_parameter_p;
   const Real _trip_parameter_b;
   const Real _trip_parameter_m;
+
+  const bool _annealing;
+  const Real _annealing_temperature;
 };
 
 } // End namespace

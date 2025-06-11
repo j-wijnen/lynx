@@ -29,7 +29,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::validParams()
   params.addRequiredParam<std::vector<std::string>>("prop_files", "CSV files with phase properties.");
   params.addParam<bool>("inverse_average", false, "Compute phase averages with Ruess bounds");
 
-  params.addRequiredCoupledVar("coupled_variable", "The temperature variable that will be used for interpolation.");
+  params.addRequiredCoupledVar("temperature_variable", "The temperature variable that will be used for interpolation.");
 
   return params;
 }
@@ -46,7 +46,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
   _inverse_average(getParam<bool>("inverse_average")),
 
   // Coupled temperature variable
-  _temperature(coupledGenericValue<is_ad>("coupled_variable")),
+  _temperature(coupledGenericValue<is_ad>("temperature_variable")),
 
   // Required phase fractions
   _fraction_f(getMaterialProperty<Real>("fraction_ferrite")),

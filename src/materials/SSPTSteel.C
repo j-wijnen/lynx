@@ -367,7 +367,7 @@ SSPTSteel::diffusiveTransformation(Phase phase,
       if( std::abs(r) < _tolerance )
         break;
       else if( iter > 100 )
-        mooseError("Diffuse transformation did not converge");
+        mooseException("Diffuse transformation did not converge");
 
       // Update points
       if( fraction > fraction1 && fraction < fraction2)
