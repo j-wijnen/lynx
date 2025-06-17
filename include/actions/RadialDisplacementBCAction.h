@@ -11,32 +11,32 @@
 
 #pragma once
 
-#include "DirichletBCBase.h"
+#include "Action.h"
 
 namespace lynx
 {
 
-/*  Applies a linearly increasing K-field to the boundary
- */
-
-class KFieldDirichletBC : public DirichletBCBase
+class RadialDisplacementBCAction : public Action
 {
 public:
   static InputParameters validParams();
 
-  KFieldDirichletBC(const InputParameters & params);
+  RadialDisplacementBCAction(const InputParameters & params);
+
+  virtual void act() override;
 
 protected:
-  virtual Real computeQpValue() override;
+  /// Flag to use automatic differentiation
+  const bool _use_ad;
 
-  MooseEnum _direction;
-  Real _K_value;
-  Real _J_value;
-  Real _youngs_modulus;
-  Real _poissons_ratio;
-  Real _start_time;
-  Real _end_time;
-  bool _J_prescribed;
+  /// displacement variables
+  std::vector<VariableName> _displacements;
+
+  /// number of displacement variables
+  unsigned int _ndisp;
+
+  /// auxvariables to save residuals
+  std::vector<AuxVariableName> _save_in;
 };
 
 } // end namespace

@@ -16,6 +16,8 @@
 
 /**
  * Implements multiple hardening laws.
+ * These hardening laws are used by IsotropicPlasticStress
+ * and child classes.
  */
 
 class HardeningLaw
@@ -106,6 +108,34 @@ class VariablePowerLawHardening : public HardeningLaw
 {
 public:
   VariablePowerLawHardening(const OptionalMaterialProperty<Real> & initial_yield_stress,
+                            const OptionalMaterialProperty<Real> & hardening_modulus,
+                            const OptionalMaterialProperty<Real> & hardening_exponent,
+                            const unsigned int & qp);
+
+  virtual Real getValue(Real plastic_multiplier) override;
+
+  virtual Real getDerivative(Real plastic_multiplier) override;
+
+protected:
+  const OptionalMaterialProperty<Real> & _initial_yield_stress;
+  const OptionalMaterialProperty<Real> & _hardening_modulus;
+  const OptionalMaterialProperty<Real> & _hardening_exponent;
+  const unsigned int & _qp;
+
+  virtual void checkCoupledProperties();
+  bool _check_coupled_properties;
+};
+
+/**
+ * Variable swifthardening: 
+ * (rewritten to use sy0 and initial h) 
+ * sy = h * ((sy0/h)^(1/n) + eps)^n
+ */
+
+class VariableSwiftHardening : public HardeningLaw
+{
+public:
+  VariableSwiftHardening(const OptionalMaterialProperty<Real> & initial_yield_stress,
                             const OptionalMaterialProperty<Real> & hardening_modulus,
                             const OptionalMaterialProperty<Real> & hardening_exponent,
                             const unsigned int & qp);

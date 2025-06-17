@@ -16,27 +16,25 @@
 namespace lynx
 {
 
-/*  Applies a linearly increasing K-field to the boundary
+/*  Applies a linearly increasing radial displacement
  */
 
-class KFieldDirichletBC : public DirichletBCBase
+class FixedRadialDisplacementBC : public DirichletBCBase
 {
 public:
   static InputParameters validParams();
 
-  KFieldDirichletBC(const InputParameters & params);
+  FixedRadialDisplacementBC(const InputParameters & params);
 
 protected:
   virtual Real computeQpValue() override;
 
-  MooseEnum _direction;
-  Real _K_value;
-  Real _J_value;
-  Real _youngs_modulus;
-  Real _poissons_ratio;
-  Real _start_time;
-  Real _end_time;
-  bool _J_prescribed;
+  // Parameters
+  const MooseEnum _component;
+  const Real _value;
+  const std::vector<Real> _origin;
+  const Real _start_time;
+  const Real _end_time;
 };
 
 } // end namespace

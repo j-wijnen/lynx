@@ -14,7 +14,7 @@ IsotropicPlasticStress::validParams()
   params.addClassDescription("This material computes the stress for small strain"
     "isotropic von Mises plasticity.");
     
-  MooseEnum hardeningLaw("NONE LINEAR POWERLAW VARIABLE_POWERLAW", "NONE");
+  MooseEnum hardeningLaw("NONE LINEAR POWERLAW VARIABLE_POWERLAW", "VARIABLE_SWIFT", "NONE");
   params.addParam<MooseEnum>("hardening_law", hardeningLaw, "Strain formulation");
   params.addParam<Real>("initial_yield_stress", 0.0, "The initial yield stress of the material.");
   params.addParam<Real>("hardening_modulus", 0.0, "The hardenings modulus (linear hardening)");
@@ -83,6 +83,10 @@ IsotropicPlasticStress::IsotropicPlasticStress(
       break;
     case 3: // VARIABLE_POWERLAW
       _hardening = std::make_unique<VariablePowerLawHardening>(
+        _initial_yield_stress_prop,  _hardening_modulus_prop, _hardening_exponent_prop, _qp);
+      break;
+    case 4: // VARIABLE_SWIFT
+      _hardening = std::make_unique<VariableSwiftHardening>(
         _initial_yield_stress_prop,  _hardening_modulus_prop, _hardening_exponent_prop, _qp);
       break;
   }

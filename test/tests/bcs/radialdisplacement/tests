@@ -1,0 +1,12 @@
+[Tests]
+  [radialdisplacement]
+    type = 'Exodiff'
+    input = 'radialdisplacement.i'
+    exodiff = 'radialdisplacement_out.e'
+  []
+  [fixedradialdisplacement]
+    type = 'Exodiff'
+    input = 'fixedradialdisplacement.i'
+    exodiff = 'fixedradialdisplacement_out.e'
+  []
+[]

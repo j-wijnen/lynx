@@ -159,3 +159,55 @@ VariablePowerLawHardening::checkCoupledProperties()
   
   _check_coupled_properties = false;
 }
+
+// ====================
+
+VariableSwiftHardening::VariableSwiftHardening(
+  const OptionalMaterialProperty<Real> & initial_yield_stress,
+  const OptionalMaterialProperty<Real> & hardening_modulus,
+  const OptionalMaterialProperty<Real> & hardening_exponent,
+  const unsigned int & qp
+)
+  : HardeningLaw(),
+  _initial_yield_stress(initial_yield_stress),
+  _hardening_modulus(hardening_modulus),
+  _hardening_exponent(hardening_exponent),
+  _qp(qp),
+
+  _check_coupled_properties(true)
+{
+}
+
+Real
+VariableSwiftHardening::getValue(Real plastic_multiplier)
+{
+  if (_check_coupled_properties)
+    checkCoupledProperties();
+
+  return _hardening_modulus[_qp] * std::pow(
+    std::pow(_initial_yield_stress[_qp]/_hardening_modulus[_qp], 
+      1./_hardening_exponent[_qp])
+    + plastic_multiplier, _hardening_exponent[_qp]);
+}
+
+Real 
+VariableSwiftHardening::getDerivative(Real plastic_multiplier)
+{
+  return _hardening_exponent[_qp] * _hardening_modulus[_qp] * std::pow(
+    std::pow(_initial_yield_stress[_qp]/_hardening_modulus[_qp], 
+      1.0/_hardening_exponent[_qp])
+    + plastic_multiplier, _hardening_exponent[_qp] - 1.0);
+}
+
+void 
+VariableSwiftHardening::checkCoupledProperties()
+{
+  if (!_initial_yield_stress)
+    mooseError("`initial_yield_stress` property is not coupled");
+  if (!_hardening_modulus)
+    mooseError("`hardening_modulus` property is not coupled");
+  if (!_hardening_exponent)
+    mooseError("`hardening_exponent` property is not coupled");
+  
+  _check_coupled_properties = false;
+}

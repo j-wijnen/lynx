@@ -12,6 +12,7 @@
 #include "LynxApp.h"
 #include "Moose.h"
 #include "AppFactory.h"
+#include "ActionFactory.h"
 #include "ModulesApp.h"
 #include "MooseSyntax.h"
 
@@ -39,6 +40,7 @@ LynxApp::registerAll(Factory & f, ActionFactory & af, Syntax & s)
   Registry::registerActionsTo(af, {"LynxApp"});
 
   /* register custom execute flags, action syntax, etc. here */
+  //registerSyntax("RadialDisplacementBC", "Actions/RadialDisplacementBCAction/*");
 }
 
 void

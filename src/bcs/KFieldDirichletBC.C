@@ -1,7 +1,20 @@
+//* This file is part of Lynx, 
+//* an open-source application for the simulation  
+//* of mechanics and multi-physics problems
+//* https://github.com/j-wijnen/lynx
+//*
+//* Lynx is powered by the MOOSE Framework
+//* https://www.mooseframework.org
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
 #include "KFieldDirichletBC.h"
 
-registerMooseObject("LynxApp", KFieldDirichletBC);
+namespace lynx
+{
 
+registerMooseObject("LynxApp", KFieldDirichletBC);
 
 InputParameters
 KFieldDirichletBC::validParams()
@@ -78,3 +91,5 @@ KFieldDirichletBC::computeQpValue()
 
   return K * (1. + _poissons_ratio) / _youngs_modulus  * std::sqrt(.5*r/pi) * f;
 }
+
+} // end
