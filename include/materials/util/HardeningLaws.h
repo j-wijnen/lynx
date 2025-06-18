@@ -81,7 +81,6 @@ protected:
  * (rewritten to use sy0 and initial h) 
  * sy = h * ((sy0/h)^(1/n) + eps)^n
  */
-
 class SwiftHardening : public HardeningLaw
 {
 public:
@@ -95,15 +94,14 @@ public:
 
 protected:
   const Real _initial_yield_stress;
-  const Real _modulus;
-  const Real _exponent;
+  const Real _hardening_modulus;
+  const Real _hardening_exponent;
 
 };
 
 /**
  * Variable power-law hardening: sy = sy0 * (1 + h * eps / sy0 )^n
  */
-
 class VariablePowerLawHardening : public HardeningLaw
 {
 public:
@@ -131,7 +129,6 @@ protected:
  * (rewritten to use sy0 and initial h) 
  * sy = h * ((sy0/h)^(1/n) + eps)^n
  */
-
 class VariableSwiftHardening : public HardeningLaw
 {
 public:

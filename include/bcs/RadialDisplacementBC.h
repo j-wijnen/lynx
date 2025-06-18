@@ -17,7 +17,8 @@
 namespace lynx
 {
 
-/*  Applies a linearly increasing radial displacement
+/**
+ * Applies a linearly increasing radial displacement
  */
 
 template<bool is_ad>

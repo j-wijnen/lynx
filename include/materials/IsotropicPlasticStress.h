@@ -34,6 +34,9 @@ protected:
 
   virtual Real computeReturnDerivative(Real dplastic_mult);
 
+  // Assign the hardening law
+  virtual void setHardeningLaw(const InputParameters & parameters);
+
   // Consumed material properties
   const MaterialProperty<RankFourTensor> & _elasticity_tensor;
 

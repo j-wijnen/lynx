@@ -23,12 +23,13 @@ KFieldDirichletBC::validParams()
 
   params.addClassDescription("Applies a linearly increasing K-field to the boundary");
 
-  MooseEnum direction("x y");
-  params.addRequiredParam<MooseEnum>("direction", direction, "Direction of displacement component");
+  MooseEnum component("x y");
+  params.addRequiredParam<MooseEnum>("component", component, 
+    "Displacement component that needs to be constrained");
   params.addRequiredParam<Real>("youngs_modulus", "Young's modulus");
   params.addRequiredParam<Real>("poissons_ratio", "Poissons ratio");
-  params.addParam<Real>("K", 0.0, "K-value to be described");
-  params.addParam<Real>("J", 0.0, "J-value to be described");
+  params.addParam<Real>("K_value", 0.0, "K-value to be described");
+  params.addParam<Real>("J_value", 0.0, "J-value to be described");
   params.addParam<Real>("start_time", 0.0, 
     "Start time of increase. Before this time the value is kept at 0.");
   params.addParam<Real>("end_time", 0.0, 
@@ -40,17 +41,16 @@ KFieldDirichletBC::validParams()
 
 KFieldDirichletBC::KFieldDirichletBC(const InputParameters & params)
   : DirichletBCBase(params),
-    _direction(getParam<MooseEnum>("direction")),
-    _K_value(getParam<Real>("K")),
-    _J_value(getParam<Real>("J")),
+    _component(getParam<MooseEnum>("component")),
+    _K_value(getParam<Real>("K_value")),
+    _J_value(getParam<Real>("J_value")),
     _youngs_modulus(getParam<Real>("youngs_modulus")),
     _poissons_ratio(getParam<Real>("poissons_ratio")),
     _start_time(getParam<Real>("start_time")),
     _end_time(getParam<Real>("end_time"))
 {
-  _J_prescribed = params.isParamSetByUser("J");
-
-  if(_J_prescribed == params.isParamSetByUser("K"))
+  _J_prescribed = params.isParamSetByUser("J_value");
+  if(_J_prescribed == params.isParamSetByUser("K_value"))
     mooseError("`K` OR `J` have to be defined.");
 }
 
@@ -59,8 +59,9 @@ Real
 KFieldDirichletBC::computeQpValue()
 {
   // Apply constant value before/after start/end time
-  Real progress = (_t - _start_time) / (_end_time - _start_time);
-  progress = std::min(std::max(progress, 0.0), 1.0);
+  Real progress = 1.0;
+  if (_end_time > 0.0)
+    progress = std::min(std::max((_t - _start_time) / (_end_time - _start_time), 0.0), 1.0);
 
   Real K;
   if( _J_prescribed )
@@ -79,7 +80,7 @@ KFieldDirichletBC::computeQpValue()
   const Real s05 = std::sin(.5*theta);
 
   Real f;
-  switch(_direction)
+  switch(_component)
   {
     case 0:
       f = c05 * (2. - 4.*_poissons_ratio + 2.*s05*s05);

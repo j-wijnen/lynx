@@ -14,7 +14,7 @@ IsotropicPlasticStress::validParams()
   params.addClassDescription("This material computes the stress for small strain"
     "isotropic von Mises plasticity.");
     
-  MooseEnum hardeningLaw("NONE LINEAR POWERLAW VARIABLE_POWERLAW", "VARIABLE_SWIFT", "NONE");
+  MooseEnum hardeningLaw("NONE LINEAR POWERLAW SWIFT VARIABLE_POWERLAW VARIABLE_SWIFT", "NONE");
   params.addParam<MooseEnum>("hardening_law", hardeningLaw, "Strain formulation");
   params.addParam<Real>("initial_yield_stress", 0.0, "The initial yield stress of the material.");
   params.addParam<Real>("hardening_modulus", 0.0, "The hardenings modulus (linear hardening)");
@@ -57,40 +57,7 @@ IsotropicPlasticStress::IsotropicPlasticStress(
   _hardening_modulus_prop(getOptionalMaterialProperty<Real>("hardening_modulus_name")),
   _hardening_exponent_prop(getOptionalMaterialProperty<Real>("hardening_exponent_name"))
 {
-  // Assign hardening law
-  switch(_hardening_law)
-  {
-    case 0: // NONE
-      if(!parameters.isParamSetByUser("initial_yield_stress"))
-        mooseError("`yield_stress` is not set");
-      _hardening = std::make_unique<LinearHardening>(_initial_yield_stress, 0.0);
-      break;
-    case 1: // LINEAR
-      if(!parameters.isParamSetByUser("initial_yield_stress"))
-        mooseError("`yield_stress` is not set");
-      if(!parameters.isParamSetByUser("hardening_modulus"))
-        mooseError("`hardening_modulus` is not set");
-      _hardening = std::make_unique<LinearHardening>(_initial_yield_stress, _hardening_modulus);
-      break;
-    case 2: // POWERLAW
-      if(!parameters.isParamSetByUser("initial_yield_stress"))
-        mooseError("`yield_stress` is not set");
-      if(!parameters.isParamSetByUser("hardening_modulus"))
-        mooseError("`hardening_modulus` is not set");
-      if(!parameters.isParamSetByUser("hardening_exponent"))
-        mooseError("`hardening_exponent` is not set");
-      _hardening = std::make_unique<PowerLawHardening>(_initial_yield_stress, _hardening_modulus, _hardening_exponent);
-      break;
-    case 3: // VARIABLE_POWERLAW
-      _hardening = std::make_unique<VariablePowerLawHardening>(
-        _initial_yield_stress_prop,  _hardening_modulus_prop, _hardening_exponent_prop, _qp);
-      break;
-    case 4: // VARIABLE_SWIFT
-      _hardening = std::make_unique<VariableSwiftHardening>(
-        _initial_yield_stress_prop,  _hardening_modulus_prop, _hardening_exponent_prop, _qp);
-      break;
-  }
-
+  setHardeningLaw(parameters);
 }
 
 void IsotropicPlasticStress::initialSetup()
@@ -189,4 +156,54 @@ IsotropicPlasticStress::computeReturnDerivative(Real dplastic_mult)
 {
   return - 3. * getIsotropicShearModulus(_elasticity_tensor[_qp])
     - _hardening->getDerivative(_plastic_multiplier_old[_qp] + dplastic_mult);
+}
+
+void
+IsotropicPlasticStress::setHardeningLaw(const InputParameters & parameters)
+{
+  // Assign hardening law
+  if (_hardening_law == "NONE")
+  {
+    if(!parameters.isParamSetByUser("initial_yield_stress"))
+      mooseError("`yield_stress` is not set");
+    _hardening = std::make_unique<LinearHardening>(_initial_yield_stress, 0.0);
+  }
+  else if (_hardening_law == "LINEAR")
+  {
+    if(!parameters.isParamSetByUser("initial_yield_stress"))
+        mooseError("`yield_stress` is not set");
+    if(!parameters.isParamSetByUser("hardening_modulus"))
+      mooseError("`hardening_modulus` is not set");
+    _hardening = std::make_unique<LinearHardening>(_initial_yield_stress, _hardening_modulus);
+  }
+  else if (_hardening_law == "POWERLAW")
+  {
+    if(!parameters.isParamSetByUser("initial_yield_stress"))
+        mooseError("`yield_stress` is not set");
+    if(!parameters.isParamSetByUser("hardening_modulus"))
+      mooseError("`hardening_modulus` is not set");
+    if(!parameters.isParamSetByUser("hardening_exponent"))
+        mooseError("`hardening_exponent` is not set");
+    _hardening = std::make_unique<PowerLawHardening>(_initial_yield_stress, _hardening_modulus, _hardening_exponent);
+  }
+  else if (_hardening_law == "SWIFT")
+  {
+    if(!parameters.isParamSetByUser("initial_yield_stress"))
+        mooseError("`yield_stress` is not set");
+    if(!parameters.isParamSetByUser("hardening_modulus"))
+      mooseError("`hardening_modulus` is not set");
+    if(!parameters.isParamSetByUser("hardening_exponent"))
+        mooseError("`hardening_exponent` is not set");
+    _hardening = std::make_unique<SwiftHardening>(_initial_yield_stress, _hardening_modulus, _hardening_exponent);
+  }
+  else if (_hardening_law == "VARIABLE_POWERLAW")
+  {
+    _hardening = std::make_unique<VariablePowerLawHardening>(
+      _initial_yield_stress_prop,  _hardening_modulus_prop, _hardening_exponent_prop, _qp);
+  }
+  else if (_hardening_law == "VARIABLE_SWIFT")
+  {
+    _hardening = std::make_unique<VariableSwiftHardening>(
+      _initial_yield_stress_prop,  _hardening_modulus_prop, _hardening_exponent_prop, _qp);
+  }
 }

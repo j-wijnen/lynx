@@ -89,25 +89,25 @@ SwiftHardening::SwiftHardening(Real initial_yield_stress,
 )
   : HardeningLaw(),
   _initial_yield_stress(initial_yield_stress),
-  _modulus(hardening_modulus),
-  _exponent(hardening_exponent)
+  _hardening_modulus(hardening_modulus),
+  _hardening_exponent(hardening_exponent)
 {
 }
 
 Real
 SwiftHardening::getValue(Real plastic_multiplier)
 {
-  return _modulus * std::pow(
-    std::pow(_initial_yield_stress/_modulus, 1./_exponent)
-    + plastic_multiplier, _exponent);
+  return _hardening_modulus * std::pow(
+    std::pow(_initial_yield_stress/_hardening_modulus, 1./_hardening_exponent)
+    + plastic_multiplier, _hardening_exponent);
 }
 
 Real 
 SwiftHardening::getDerivative(Real plastic_multiplier)
 {
-  return _exponent * _modulus * std::pow(
-    std::pow(_initial_yield_stress/_modulus, 1.0/_exponent)
-    + plastic_multiplier, _exponent - 1.0);
+  return _hardening_exponent * _hardening_modulus * std::pow(
+    std::pow(_initial_yield_stress/_hardening_modulus, 1.0/_hardening_exponent)
+    + plastic_multiplier, _hardening_exponent - 1.0);
 }
 
 // ====================

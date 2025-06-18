@@ -16,9 +16,9 @@
 namespace lynx
 {
 
-/*  Applies a linearly increasing K-field to the boundary
+/**  
+ * Applies a linearly increasing K-field to the boundary
  */
-
 class KFieldDirichletBC : public DirichletBCBase
 {
 public:
@@ -29,7 +29,7 @@ public:
 protected:
   virtual Real computeQpValue() override;
 
-  MooseEnum _direction;
+  MooseEnum _component;
   Real _K_value;
   Real _J_value;
   Real _youngs_modulus;
