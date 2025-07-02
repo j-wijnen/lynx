@@ -57,18 +57,11 @@ Physical Curve("Right", 16) = {3, 4};
 // We could also use a `Box' field to impose a step change in element sizes
 // inside a box
 Field[1] = Box;
-Field[1].VIn = 0.1;
+Field[1].VIn = 0.5;
 Field[1].VOut = 1.0;
 Field[1].XMin = 0.0;
 Field[1].XMax = 5.0;
 Field[1].YMin = 0.0;
-Field[1].YMax = 1.0;
+Field[1].YMax = 5.0;
 
 Background Field = 1;
-
-Mesh.ElementOrder = 2;
-Mesh.SecondOrderIncomplete = 2;
-
-Mesh.RecombinationAlgorithm = 1;
-Mesh.Algorithm = 8;  // 5 (delaunay) or 8 (frontal delaunay for quads):
-//Recombine Surface {:};//+

@@ -26,11 +26,19 @@
   [all]
     strain = small
     add_variables = true
-    generate_output = 'stress_xx stress_yy stress_xy 
-      vonmises_stress strain_yy strain_xy'
+    generate_output = 'stress_xx strain_xx'
     save_in = 'force_x force_y'
+    # planar_formulation = weak_plane_stress 
+    # out_of_plane_strain = strain_zz
   []
 []
+
+# [Variables]
+#   [strain_zz]
+#     family = lagrange 
+#   []
+# []
+
 
 [AuxVariables]
   [force_x]
@@ -66,20 +74,11 @@
         value = 0.
     []
     [right]
-        type = LinearRampDirichletBC
+        type = FunctionDirichletBC
         variable = disp_x
         boundary = right
-        value = 0.5
+        function = 't'
     []
-[]
-
-[Postprocessors]
-  [force]
-    type = NodalSum
-    variable = force_x
-    boundary = right
-    outputs = force
-  []
 []
 
 [Executioner]
@@ -90,6 +89,31 @@
   l_tol = 1e-8
   nl_abs_tol = 1e-8
   nl_rel_tol = 1e-4
+[]
+
+[Postprocessors]
+  [disp]
+    type = NodalMaxValue 
+    variable = disp_x 
+    boundary = right
+    outputs = force 
+  []
+  [force]
+    type = NodalSum
+    variable = force_x
+    boundary = right
+    outputs = force
+  []
+  [strain]
+    type = ElementAverageValue
+    variable = strain_xx
+    outputs = force 
+  []
+  [stress]
+    type = ElementAverageValue
+    variable = stress_xx
+    outputs = force 
+  []
 []
 
 [Outputs]

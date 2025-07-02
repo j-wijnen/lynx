@@ -1,4 +1,6 @@
 [GlobalParams]
+  end_time = 1.0
+  dt = 0.05
   displacements = 'disp_x disp_y'
   large_kinematics = true
 []
@@ -19,14 +21,21 @@
     strain = finite
     new_system = true
     add_variables = true
-    generate_output = 'pk1_stress_xx pk1_stress_yy pk1_stress_xy 
-      vonmises_pk1_stress 
-      strain_xx strain_yy strain_xy'
     use_automatic_differentiation = false
     formulation = total
+    generate_output = 'pk1_stress_xx strain_xx'
+    save_in = 'force_x force_y'
   []
 []
 
+[AuxVariables]
+  [force_x]
+    family = lagrange
+  []
+  [force_y]
+    family = lagrange
+  []
+[]
 
 [Materials]
   [elasticity]
@@ -52,38 +61,56 @@
         boundary = left
         value = 0.
     []
-    [rightx]
-        type = DirichletBC
+    [right]
+        type = FunctionDirichletBC
         variable = disp_x
         boundary = right
-        value = 0.5
+        function = 't'
     []
 []
 
-[Preconditioning]
-  [smp]
-    type = SMP 
-    full = true 
-  []
-[]
-
 [Executioner]
-  type = Steady
+  type = Transient
   solve_type = "NEWTON"
   petsc_options_iname = '-pc_type -pc_factor_mat_solver_type'
   petsc_options_value = 'lu mumps'
-  #petsc_options_iname = '-pc_type -pc_hypre_type'
-  #petsc_options_value = 'hypre boomeramg'
   l_tol = 1e-8
-  nl_abs_tol = 1e-6
-  nl_rel_tol = 1e-6
-  nl_max_its = 5000
+  nl_abs_tol = 1e-3
+  nl_rel_tol = 1e-4
+  nl_max_its = 200
+[]
+
+[Postprocessors]
+  [disp]
+    type = NodalMaxValue 
+    variable = disp_x 
+    boundary = right
+    outputs = force 
+  []
+  [force]
+    type = NodalSum
+    variable = force_x
+    boundary = right
+    outputs = force
+  []
+  [strain]
+    type = ElementAverageValue
+    variable = strain_xx
+    outputs = force 
+  []
+  [stress]
+    type = ElementAverageValue
+    variable = pk1_stress_xx
+    outputs = force 
+  []
 []
 
 [Outputs]
   [out]
     type = Exodus
-    time_step_interval = 1
+  []
+  [force]
+    type = CSV
   []
   print_linear_residuals = false
 []
