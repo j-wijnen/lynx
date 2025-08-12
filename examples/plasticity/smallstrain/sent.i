@@ -37,16 +37,19 @@
   []
   [plasticity]
     type = IsotropicPlasticStress
-    yield_stress = 200
-    hardening_law = powerlaw
-    hardening_modulus = 200e3
-    hardening_exponent = 0.1
     block = Material
+    hardening_material = hardening
   []
   [elasticlayer]
     type = IsotropicPlasticStress
-    yield_stress = 1e99
     block = ElasticLayer
+    yield_stress = 1e99
+  []
+  [hardening]
+    type = PowerLawHardening
+    initial_yield_stress = 200
+    youngs_modulus = 200e3
+    hardening_exponent = 0.1
   []
 []
 

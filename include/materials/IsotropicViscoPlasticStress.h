@@ -3,6 +3,9 @@
 #include "IsotropicPlasticStress.h"
 #include "ViscoPlasticLaws.h"
 
+namespace lynx
+{
+
 /**
  * Computes the stress following the Perzyna/Peric viscoplastic model
  * Default:   deps_p = dt/eta * (sigma/sigma_y)
@@ -29,3 +32,5 @@ protected:
 
   std::unique_ptr<ViscoPlasticLaw> _viscosity_law;
 };
+
+} // end namespace

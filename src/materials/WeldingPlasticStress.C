@@ -111,7 +111,7 @@ WeldingPlasticStress::computeQpStress()
   if (annealing_flag)
   {
     // perfect plasticity (reverts TRIP contribution)
-    _yield_stress[_qp] = _hardening->getValue(0.0);
+    _yield_stress[_qp] = _hardening_law->getYieldStress(0.0);
     if (stress_eq > _yield_stress[_qp])
     {
       dplastic_mult = (stress_tr - _yield_stress[_qp]) / (3. * shear_modulus);
@@ -127,7 +127,7 @@ WeldingPlasticStress::computeQpStress()
   {
     // Check for conventional yielding
     // Classical return map (reverts TRIP contribution)
-    _yield_stress[_qp] = _hardening->getValue(_plastic_multiplier_old[_qp] + dplastic_mult);
+    _yield_stress[_qp] = _hardening_law->getYieldStress(_plastic_multiplier_old[_qp] + dplastic_mult);
     if (stress_eq > _yield_stress[_qp])
     {
       dplastic_mult = computeReturnMap(stress_tr);

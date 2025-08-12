@@ -5,6 +5,9 @@
 using ElasticityTensorTools::getIsotropicShearModulus;
 using ElasticityTensorTools::getIsotropicBulkModulus;
 
+namespace lynx 
+{
+
 registerMooseObject("LynxApp", PFFIsotropicPlasticStress);
 
 InputParameters
@@ -99,7 +102,7 @@ PFFIsotropicPlasticStress::computeQpStress()
   _Jacobian_mult[_qp] += 2.0 * g * shear_modulus * IdentityFourDev;
 
   // Check for yielding
-  _yield_stress[_qp] = _hardening->getValue(_plastic_multiplier_old[_qp]);
+  _yield_stress[_qp] = _hardening_law->getYieldStress(_plastic_multiplier_old[_qp]);
   if(stress_eq > gp * _yield_stress[_qp])
   {
     // Return map
@@ -157,5 +160,7 @@ PFFIsotropicPlasticStress::computeReturnDerivative(Real dplastic_mult)
   Real gp = _beta * g + 1. - _beta;
 
   return - 3. * g * getIsotropicShearModulus(_elasticity_tensor[_qp])
-    - gp * _hardening->getDerivative(_plastic_multiplier_old[_qp] + dplastic_mult);
+    - gp * _hardening_law->getDerivative(_plastic_multiplier_old[_qp] + dplastic_mult);
 }
+
+} // end namespace

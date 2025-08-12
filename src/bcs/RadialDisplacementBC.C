@@ -12,13 +12,15 @@
 #include "RadialDisplacementBC.h"
 #include "Coupleable.h"
 
+using MetaPhysicL::raw_value;
+
 namespace lynx
 {
 
 registerMooseObject("LynxApp", ADRadialDisplacementBC);
 registerMooseObject("LynxApp", RadialDisplacementBC);
 
-template<bool is_ad>
+template <bool is_ad>
 InputParameters
 RadialDisplacementBCTempl<is_ad>::validParams()
 {
@@ -48,7 +50,7 @@ RadialDisplacementBCTempl<is_ad>::validParams()
   return params;
 }
 
-template<bool is_ad>
+template <bool is_ad>
 RadialDisplacementBCTempl<is_ad>::RadialDisplacementBCTempl(const InputParameters & params)
   : RadialDisplacementBCBase<is_ad>(params),
 
@@ -97,8 +99,9 @@ RadialDisplacementBCTempl<is_ad>::computeQpResidual()
   return _penalty * _test[_i][_qp] * d * n;
 }
 
+template <bool is_ad>
 Real
-RadialDisplacementBC::computeQpJacobian()
+RadialDisplacementBCTempl<is_ad>::computeQpJacobian()
 {
   // Linear ramp radial disp between `start_time` and `end_time`
   Real progress = 1.0;
@@ -109,8 +112,8 @@ RadialDisplacementBC::computeQpJacobian()
   // Fill coordinate vectors
   std::array<Real,2> x0 = {_q_point[_qp](0) - _origin[0],
                            _q_point[_qp](1) - _origin[1]};
-  std::array<Real,2> x = {x0[0] + (*_disp[0])[_qp],
-                          x0[1] + (*_disp[1])[_qp]};
+  std::array<Real,2> x = {x0[0] + raw_value((*_disp[0])[_qp]),
+                          x0[1] + raw_value((*_disp[1])[_qp])};
 
   // Radius
   Real r0 = std::sqrt(x0[0]*x0[0] + x0[1]*x0[1]);
@@ -125,8 +128,9 @@ RadialDisplacementBC::computeQpJacobian()
   return _penalty * _test[_i][_qp] * (dd_du*n + d*dn_du) * _phi[_j][_qp];
 }
 
+template <bool is_ad>
 Real
-RadialDisplacementBC::computeQpOffDiagJacobian(unsigned int jvar)
+RadialDisplacementBCTempl<is_ad>::computeQpOffDiagJacobian(unsigned int jvar)
 {
   for (unsigned int coupled_component = 0; coupled_component < 2; ++coupled_component)
     if (jvar == _disp_var[coupled_component])
@@ -140,8 +144,8 @@ RadialDisplacementBC::computeQpOffDiagJacobian(unsigned int jvar)
       // Fill coordinate vectors
       std::array<Real,2> x0 = {_q_point[_qp](0) - _origin[0],
                               _q_point[_qp](1) - _origin[1]};
-      std::array<Real,2> x = {x0[0] + (*_disp[0])[_qp],
-                              x0[1] + (*_disp[1])[_qp]};
+      std::array<Real,2> x = {x0[0] + raw_value((*_disp[0])[_qp]),
+                              x0[1] + raw_value((*_disp[1])[_qp])};
 
       // Radius
       Real r0 = std::sqrt(x0[0]*x0[0] + x0[1]*x0[1]);

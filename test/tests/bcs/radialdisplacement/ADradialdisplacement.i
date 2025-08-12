@@ -13,25 +13,26 @@
     incremental = false
     add_variables = true
     generate_output = 'vonmises_stress stress_xx'
+    use_automatic_differentiation = true
   []
 []
 
 
 [Materials]
   [elasticity]
-    type = ComputeIsotropicElasticityTensor
+    type = ADComputeIsotropicElasticityTensor
     youngs_modulus = 200e3
     poissons_ratio = 0.3
   []
   [stress]
-    type = LinearElasticStress
+    type = ADLinearElasticStress
   []
 []
 
 [BCs]
 
   [disp_r1]
-    type = RadialDisplacementBC
+    type = ADRadialDisplacementBC
     boundary = Inner
     variable = disp_x 
     component = x
@@ -39,7 +40,7 @@
     penalty = 2e8
   []
   [disp_r2]
-    type = RadialDisplacementBC
+    type = ADRadialDisplacementBC
     boundary = Inner
     variable = disp_y 
     component = y

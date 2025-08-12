@@ -16,7 +16,7 @@ class LynxTestApp : public MooseApp
 public:
   static InputParameters validParams();
 
-  LynxTestApp(InputParameters parameters);
+  LynxTestApp(const InputParameters & parameters);
   virtual ~LynxTestApp();
 
   static void registerApps();

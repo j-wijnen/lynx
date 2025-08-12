@@ -45,13 +45,16 @@ csv_file = 'viscoplastic_00025s'
   []
   [plasticity]
     type = IsotropicViscoPlasticStress
-    hardening_law = powerlaw
-    yield_stress = 200
-    hardening_modulus = 200e3
-    hardening_exponent = 0.1
+    hardening_material = hardening
     viscosity = 1e-1
     #viscosity_law = peric
     #rate_sensitivity = 0.5
+  []
+  [hardening]
+    type = PowerLawHardening
+    initial_yield_stress = 200
+    youngs_modulus = 200e3
+    hardening_exponent = 0.1
   []
 []
 

@@ -9,6 +9,9 @@
  * Peric:   deps_p = dt/eta * ((sigma/sigma_y)^n - 1)^n
  */
 
+ namespace lynx
+ {
+
 class PFFIsotropicViscoPlasticStress : public PFFIsotropicPlasticStress
 {
 public:
@@ -28,3 +31,5 @@ protected:
 
   std::unique_ptr<ViscoPlasticLaw> _viscosity_law;
 };
+
+} // end namespace

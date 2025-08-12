@@ -1,18 +1,33 @@
+//* This file is part of Lynx, 
+//* an open-source application for the simulation  
+//* of mechanics and multi-physics problems
+//* https://github.com/j-wijnen/lynx
+//*
+//* Lynx is powered by the MOOSE Framework
+//* https://www.mooseframework.org
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
 #pragma once
 
 #include "DerivativeMaterialInterface.h"
 #include "Material.h"
 
+namespace lynx
+{
+
 /**
  * Compute material degradation functions based on the damage parameter
  */
-class PFFDegradationFunction : public DerivativeMaterialInterface<Material>
+template <bool is_ad>
+class PFFDegradationFunctionTempl : public DerivativeMaterialInterface<Material>
 {
 public:
 
   static InputParameters validParams();
 
-  PFFDegradationFunction(const InputParameters & parameters);
+  PFFDegradationFunctionTempl(const InputParameters & params);
 
 protected:
 
@@ -20,13 +35,18 @@ protected:
 
   // Coupled damage variable
   const std::string _u_name;
-  const VariableValue & _u;
+  const GenericVariableValue<is_ad> & _u;
 
   // Declared properteis
-  MaterialProperty<Real> & _g,
-                         & _dg_du,
-                         & _d2g_du2;
+  GenericMaterialProperty<Real, is_ad> & _g;
+  GenericMaterialProperty<Real, is_ad> & _dg_du;
+  GenericMaterialProperty<Real, is_ad> & _d2g_du2;
 
   // Parameters
   Real _epsilon;
 };
+
+typedef PFFDegradationFunctionTempl<false> PFFDegradationFunction;
+typedef PFFDegradationFunctionTempl<true> ADPFFDegradationFunction;
+
+} // end namespace

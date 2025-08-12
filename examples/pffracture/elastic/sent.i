@@ -15,6 +15,7 @@
     add_variables = true
     generate_output = 'stress_yy strain_yy vonmises_stress'
     save_in = 'force_x force_y'
+    extra_vector_tags=ref
   []
 []
 
@@ -38,6 +39,7 @@
   [pff]
     type = PhaseFieldFractureAT2
     variable = damage
+    extra_vector_tags=ref
   []
 []
 
@@ -117,21 +119,35 @@
   []
 []
 
+[Problem]
+  extra_tag_vectors = ref 
+[]
+
 [Executioner]
   type = Transient
   solve_type = "NEWTON"
   petsc_options_iname = '-pc_type -pc_factor_mat_solver_type'
   petsc_options_value = ' lu       mumps'
   line_search = none
-  nl_abs_tol = 1e-2
+  automatic_scaling=true
+
+  nonlinear_convergence = abaqus_like
+  nl_rel_tol = 1e-3
   nl_max_its = 1000
   n_max_nonlinear_pingpong = 1000
-  l_abs_tol = 1e-4
 
   [TimeSteppers]
     [timestepper]
         type = IncreasingDT
     []
+  []
+[]
+
+[Convergence]
+  [abaqus_like]
+    type = ReferenceResidualConvergence
+    reference_vector = ref 
+    normalization_type = global_Linf
   []
 []
 

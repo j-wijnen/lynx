@@ -18,6 +18,7 @@
 [Physics/SolidMechanics/QuasiStatic]
   [all]
     strain = small
+    use_automatic_differentiation = true
     new_system = false
     add_variables = true
     generate_output = 'stress_xx strain_xx plastic_strain_xx'
@@ -33,16 +34,16 @@
 
 [Materials]
   [elasticity]
-    type = ComputeIsotropicElasticityTensor
+    type = ADComputeIsotropicElasticityTensor
     youngs_modulus = 200e3
     poissons_ratio = 0.3
   []
   [plasticity]
-    type = IsotropicPlasticStress
+    type = ADIsotropicPlasticStress
     hardening_material = hardening
   []
   [hardening]
-    type = PowerLawHardening
+    type = ADPowerLawHardening
     initial_yield_stress = 200.0
     youngs_modulus = 200e3
     hardening_exponent = 0.1
@@ -79,37 +80,10 @@
   line_search = none
 []
 
-[Postprocessors]
-  [strain]
-    type = MaterialTensorAverage
-    rank_two_tensor = mechanical_strain 
-    index_i = 0
-    index_j = 0
-    outputs = data
-  []
-  [plastic_strain]
-    type = MaterialTensorAverage
-    rank_two_tensor = plastic_strain 
-    index_i = 0
-    index_j = 0
-    outputs = data
-  []
-  [stress]
-    type = MaterialTensorAverage
-    rank_two_tensor = stress 
-    index_i = 0
-    index_j = 0
-    outputs = data
-  []
-[]
-
 [Outputs]
   print_linear_residuals = false
   [out]
     type = Exodus
     output_nonlinear = true
-  []
-  [data]
-    type = CSV
   []
 []

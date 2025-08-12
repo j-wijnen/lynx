@@ -22,7 +22,7 @@ namespace lynx
  * Reads from a single or multiple CSV files
  */ 
 
-template<bool is_ad>
+template <bool is_ad>
 class PhaseFractionMaterialFromCSVTempl : public Material 
 {
 public:

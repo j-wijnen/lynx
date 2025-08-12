@@ -1,3 +1,9 @@
+if [ -z ${MOOSE_DIR} ]
+then 
+  echo "MOOSE_DIR is not set"
+  exit 1
+fi
+
 if [ -z ${MOOSE_JOBS} ]
 then 
   export MOOSE_JOBS=1

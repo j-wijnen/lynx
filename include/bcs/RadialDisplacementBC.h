@@ -21,10 +21,10 @@ namespace lynx
  * Applies a linearly increasing radial displacement
  */
 
-template<bool is_ad>
+template <bool is_ad>
 using RadialDisplacementBCBase = typename std::conditional<is_ad, ADIntegratedBC, IntegratedBC>::type;
 
-template<bool is_ad>
+template <bool is_ad>
 class RadialDisplacementBCTempl : public RadialDisplacementBCBase<is_ad>
 {
 public:
@@ -34,6 +34,10 @@ public:
 
 protected:
   virtual GenericReal<is_ad> computeQpResidual() override;
+
+  // QpJacobian functions only override for is_ad=false
+  virtual Real computeQpJacobian();
+  virtual Real computeQpOffDiagJacobian(const unsigned int jvar_num);
 
   // Coupled displacements
   const std::vector<const GenericVariableValue<is_ad> *> _disp;
@@ -51,21 +55,14 @@ protected:
 
   using RadialDisplacementBCBase<is_ad>::_t;
   using RadialDisplacementBCBase<is_ad>::_i;
+  using RadialDisplacementBCBase<is_ad>::_j;
   using RadialDisplacementBCBase<is_ad>::_qp;
   using RadialDisplacementBCBase<is_ad>::_q_point;
   using RadialDisplacementBCBase<is_ad>::_test;
+  using RadialDisplacementBCBase<is_ad>::_phi;
 };
 
-class RadialDisplacementBC : public RadialDisplacementBCTempl<false>
-{
-public:
-  using RadialDisplacementBCTempl<false>::RadialDisplacementBCTempl;
-
-protected:
-  virtual Real computeQpJacobian() override;
-  virtual Real computeQpOffDiagJacobian(const unsigned int jvar_num) override;
-};
-
+typedef RadialDisplacementBCTempl<false> RadialDisplacementBC;
 typedef RadialDisplacementBCTempl<true> ADRadialDisplacementBC;
 
 } // end namespace

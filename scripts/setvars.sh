@@ -1,8 +1,5 @@
 export METHOD=opt
 
-# alias mpicc="ccache mpicc"
-# alias mpicxx="ccache mpicxx"
-
 export CC=mpicc
 export CXX=mpicxx
 export FC=mpif90

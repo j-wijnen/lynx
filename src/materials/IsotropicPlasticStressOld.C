@@ -1,4 +1,4 @@
-#include "IsotropicPlasticStress.h"
+#include "IsotropicPlasticStressOld.h"
 #include "ElasticityTensorTools.h"
 #include "MooseEnum.h"
 #include "MooseTensorUtils.h"
@@ -6,19 +6,16 @@
 #include "NoHardening.h"
 
 using ElasticityTensorTools::getIsotropicShearModulus;
-using MetaPhysicL::raw_value;
 
 namespace lynx
 {
 
-registerMooseObject("LynxApp", IsotropicPlasticStress);
-registerMooseObject("LynxApp", ADIsotropicPlasticStress);
+registerMooseObject("LynxApp", IsotropicPlasticStressOld);
 
-template <bool is_ad>
 InputParameters
-IsotropicPlasticStressTempl<is_ad>::validParams()
+IsotropicPlasticStressOld::validParams()
 {
-  InputParameters params = GenericComputeStressBase<is_ad>::validParams();
+  InputParameters params = ComputeStressBase::validParams();
   params.addClassDescription("This material computes the stress for small strain"
     "isotropic von Mises plasticity.");
   
@@ -29,25 +26,26 @@ IsotropicPlasticStressTempl<is_ad>::validParams()
   return params;
 }
 
-template <bool is_ad>
-IsotropicPlasticStressTempl<is_ad>::IsotropicPlasticStressTempl(const InputParameters & params)
-  : GenericComputeStressBase<is_ad>(params),
+IsotropicPlasticStressOld::IsotropicPlasticStressOld(
+    const InputParameters & params
+)
+  : ComputeStressBase(params),
     GuaranteeConsumer(this),
 
   // Consumed material properties
-  _elasticity_tensor(this->template getGenericMaterialProperty<RankFourTensor, is_ad>(_base_name + "elasticity_tensor")),
+  _elasticity_tensor(getMaterialProperty<RankFourTensor>(_base_name + "elasticity_tensor")),
 
   // Declared material properties
-  _plastic_strain(this->template declareGenericProperty<RankTwoTensor, is_ad>(_base_name + "plastic_strain")),
-  _plastic_multiplier(this->template declareGenericProperty<Real, is_ad>(_base_name + "plastic_multiplier")),
-  _yield_stress(this->template declareGenericProperty<Real, is_ad>(_base_name + "yield_stress")),
+  _plastic_strain(declareProperty<RankTwoTensor>(_base_name + "plastic_strain")),
+  _plastic_multiplier(declareProperty<Real>(_base_name + "plastic_multiplier")),
+  _yield_stress(declareProperty<Real>(_base_name + "yield_stress")),
 
   // Stateful properties
-  _plastic_strain_old(this->template getMaterialPropertyOld<RankTwoTensor>(_base_name + "plastic_strain")),
-  _plastic_multiplier_old(this->template getMaterialPropertyOld<Real>(_base_name + "plastic_multiplier")),
+  _plastic_strain_old(getMaterialPropertyOld<RankTwoTensor>(_base_name + "plastic_strain")),
+  _plastic_multiplier_old(getMaterialPropertyOld<Real>(_base_name + "plastic_multiplier")),
 
   // // Yield parameters
-  _tolerance(this->template getParam<Real>("tolerance"))
+  _tolerance(getParam<Real>("tolerance"))
 {
   // No hardening material provided > create NoHardening object
   if (!params.isParamSetByUser("hardening_material"))
@@ -57,7 +55,7 @@ IsotropicPlasticStressTempl<is_ad>::IsotropicPlasticStressTempl(const InputParam
     if (!params.isParamSetByUser("yield_stress"))
       mooseError("`yield_stress` is not set and no hardening material is provided");
 
-    _hardening_law = dynamic_cast<HardeningBase<is_ad> *>(new NoHardeningTempl<is_ad>(params));
+    _hardening_law = dynamic_cast<HardeningBase<false> *>(new NoHardening(params));
   }
   // Hardening material is provided
   else
@@ -69,17 +67,15 @@ IsotropicPlasticStressTempl<is_ad>::IsotropicPlasticStressTempl(const InputParam
   }
 }
 
-template <bool is_ad>
-IsotropicPlasticStressTempl<is_ad>::~IsotropicPlasticStressTempl()
+IsotropicPlasticStressOld::~IsotropicPlasticStressOld()
 {
   if (_no_hardening)
     delete _hardening_law;
 }
 
-template <bool is_ad>
-void IsotropicPlasticStressTempl<is_ad>::initialSetup()
+void IsotropicPlasticStressOld::initialSetup()
 {
-  GenericComputeStressBase<is_ad>::initialSetup();
+  ComputeStressBase::initialSetup();
 
   // Check if the material is isotropic
   if(!hasGuaranteedMaterialProperty(_base_name + "elasticity_tensor", Guarantee::ISOTROPIC))
@@ -88,45 +84,43 @@ void IsotropicPlasticStressTempl<is_ad>::initialSetup()
   // Obtain hardening material if provided
   if (!_no_hardening)
   {
-    const MaterialName & hardening_material = this->template getParam<MaterialName>("hardening_material");
-    _hardening_law = dynamic_cast<HardeningBase<is_ad> *>(&this->template getMaterialByName(hardening_material));
+    const MaterialName & hardening_material = getParam<MaterialName>("hardening_material");
+    _hardening_law = dynamic_cast<HardeningBase<false> *>(&getMaterialByName(hardening_material));
     _hardening_law->coupleQp(&_qp);
   }
  }
 
-template <bool is_ad>
 void
-IsotropicPlasticStressTempl<is_ad>::initQpStatefulProperties()
+IsotropicPlasticStressOld::initQpStatefulProperties()
 {
-  GenericComputeStressBase<is_ad>::initQpStatefulProperties();
+  ComputeStressBase::initQpStatefulProperties();
 
   _plastic_strain[_qp].zero();
   _plastic_multiplier[_qp] = 0.0;
 }
 
-template <bool is_ad>
 void 
-IsotropicPlasticStressTempl<is_ad>::computeQpStress()
+IsotropicPlasticStressOld::computeQpStress()
 {
-  GenericReal<is_ad> shear_modulus = getIsotropicShearModulus(_elasticity_tensor[_qp]);
+  Real shear_modulus = getIsotropicShearModulus(_elasticity_tensor[_qp]);
 
   // Elastic trial state
   _elastic_strain[_qp] = _mechanical_strain[_qp] - _plastic_strain_old[_qp];
   _stress[_qp] = _elasticity_tensor[_qp] * _elastic_strain[_qp];
-  GenericRankFourTensor<is_ad> jacobian = _elasticity_tensor[_qp];
+  _Jacobian_mult[_qp] = _elasticity_tensor[_qp];
 
-  GenericRankTwoTensor<is_ad> stress_dev = _stress[_qp].deviatoric();
-  GenericReal<is_ad> stress_eq = _sqrt32 * std::sqrt(stress_dev.doubleContraction(stress_dev));
+  RankTwoTensor stress_dev = _stress[_qp].deviatoric();
+  Real stress_eq = _sqrt32 * std::sqrt(stress_dev.doubleContraction(stress_dev));
 
   // Check for yielding
   _yield_stress[_qp] = _hardening_law->getYieldStress(_plastic_multiplier[_qp]);
   if(stress_eq > _yield_stress[_qp])
   {
     // Return map
-    GenericReal<is_ad> dplastic_mult = computeReturnMap(stress_eq);
+    Real dplastic_mult = computeReturnMap(stress_eq);
 
     // Update strains, stress, jacobian
-    GenericRankTwoTensor<is_ad> N = _sqrt32 * stress_dev / stress_eq;
+    RankTwoTensor N = _sqrt32 * stress_dev / stress_eq;
 
     _plastic_strain[_qp] = _plastic_strain_old[_qp] + _sqrt32 * dplastic_mult * N;
     _plastic_multiplier[_qp] = _plastic_multiplier_old[_qp] + dplastic_mult;
@@ -134,23 +128,19 @@ IsotropicPlasticStressTempl<is_ad>::computeQpStress()
 
     _stress[_qp] = _elasticity_tensor[_qp] * _elastic_strain[_qp];
 
-    jacobian += 6. * shear_modulus*shear_modulus * (
+    _Jacobian_mult[_qp] += 6. * shear_modulus*shear_modulus * (
       - dplastic_mult / stress_eq * IdentityFourDev
       + (dplastic_mult / stress_eq + 1. / computeReturnDerivative(dplastic_mult)) 
       * N.outerProduct(N));
   }
-
-  setJacobian(jacobian);
 }
 
-template <bool is_ad>
-GenericReal<is_ad>
-IsotropicPlasticStressTempl<is_ad>::computeReturnMap(GenericReal<is_ad> trial_stress)
+Real
+IsotropicPlasticStressOld::computeReturnMap(Real trial_stress)
 {
-  GenericReal<is_ad> dplastic_mult;
-  dplastic_mult = 0.0;
-  GenericReal<is_ad> dplastic_mult_prev;
-  GenericReal<is_ad> r;
+  Real dplastic_mult = 0.0;
+  Real dplastic_mult_prev;
+  Real r;
   int iter = 0;
 
   while(true)
@@ -174,18 +164,16 @@ IsotropicPlasticStressTempl<is_ad>::computeReturnMap(GenericReal<is_ad> trial_st
   }
 }
 
-template <bool is_ad>
-GenericReal<is_ad>
-IsotropicPlasticStressTempl<is_ad>::computeReturnResidual(GenericReal<is_ad> trial_stress, 
-                                                          GenericReal<is_ad> dplastic_mult)
+Real
+IsotropicPlasticStressOld::computeReturnResidual(Real trial_stress, 
+                                              Real dplastic_mult)
 {
   return trial_stress - 3. * getIsotropicShearModulus(_elasticity_tensor[_qp]) * dplastic_mult
     - _yield_stress[_qp];
 }
 
-template <bool is_ad>
-GenericReal<is_ad>
-IsotropicPlasticStressTempl<is_ad>::computeReturnDerivative(GenericReal<is_ad> dplastic_mult)
+Real
+IsotropicPlasticStressOld::computeReturnDerivative(Real dplastic_mult)
 {
   return - 3. * getIsotropicShearModulus(_elasticity_tensor[_qp])
     - _hardening_law->getDerivative(_plastic_multiplier_old[_qp] + dplastic_mult);

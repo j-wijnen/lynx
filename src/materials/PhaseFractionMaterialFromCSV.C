@@ -19,7 +19,7 @@ namespace lynx
 registerMooseObject("LynxApp", PhaseFractionMaterialFromCSV);
 registerMooseObject("LynxApp", ADPhaseFractionMaterialFromCSV);
 
-template<bool is_ad>
+template <bool is_ad>
 InputParameters
 PhaseFractionMaterialFromCSVTempl<is_ad>::validParams()
 {
@@ -34,7 +34,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::validParams()
   return params;
 }
 
-template<bool is_ad>
+template <bool is_ad>
 PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
   const InputParameters & parameters
 )
@@ -77,7 +77,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::PhaseFractionMaterialFromCSVTempl(
     readPropertiesSingleFile();
 }
 
-template<bool is_ad>
+template <bool is_ad>
 void
 PhaseFractionMaterialFromCSVTempl<is_ad>::readPropertiesMultipleFiles()
 {
@@ -108,7 +108,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::readPropertiesMultipleFiles()
   }
 }
 
-template<bool is_ad>
+template <bool is_ad>
 void
 PhaseFractionMaterialFromCSVTempl<is_ad>::readPropertiesSingleFile()
 {
@@ -140,7 +140,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::readPropertiesSingleFile()
   }
 }
 
-template<bool is_ad>
+template <bool is_ad>
 void
 PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpProperties()
 {
@@ -150,7 +150,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpProperties()
     computeQpPropertiesSingleFile();
 }
 
-template<bool is_ad>
+template <bool is_ad>
 void
 PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpPropertiesMultipleFiles()
 {
@@ -184,7 +184,7 @@ PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpPropertiesMultipleFiles()
   }
 }
 
-template<bool is_ad>
+template <bool is_ad>
 void
 PhaseFractionMaterialFromCSVTempl<is_ad>::computeQpPropertiesSingleFile()
 {

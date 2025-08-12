@@ -71,7 +71,7 @@
   []
   [stress]
     type = WeldingPlasticStress
-    initial_yield_stress = 1e20
+    yield_stress = 1e20
     outputs = all
     output_properties = plastic_multiplier
     trip_parameter_ferrite = 1.0

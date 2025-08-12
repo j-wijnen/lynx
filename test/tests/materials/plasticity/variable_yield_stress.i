@@ -64,8 +64,8 @@
   []
   [generic]
     type = GenericConstantMaterial
-    prop_names = 'hardening_modulus hardening_exponent'
-    prop_values = '0.0 0.0'
+    prop_names = 'youngs_modulus hardening_exponent'
+    prop_values = '200e3 0.0'
   []
   [elasticity]
     type = ComputeIsotropicElasticityTensor
@@ -74,7 +74,10 @@
   []
   [stress]
     type = IsotropicPlasticStress
-    hardening_law = variable_powerlaw
+    hardening_material = variable_powerlaw
+  []
+  [variable_powerlaw]
+    type = VariablePowerLawHardening
   []
 []
 

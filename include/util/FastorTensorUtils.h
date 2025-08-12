@@ -8,7 +8,7 @@ using FTensor2 = Fastor::Tensor<Real,3,3>;
 using FTensor4 = Fastor::Tensor<Real,3,3,3,3>;
 
 // Conversions between tensor implementations
-template<class Tout, class Tin>
+template <class Tout, class Tin>
 inline Tout convertRankTwoTensor(const Tin& tensor)
 {
   Tout result;
@@ -20,7 +20,7 @@ inline Tout convertRankTwoTensor(const Tin& tensor)
   return result;
 }
 
-template<class Tout, class Tin>
+template <class Tout, class Tin>
 inline Tout convertRankFourTensor(const Tin& tensor)
 {
   Tout result;

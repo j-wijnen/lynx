@@ -35,7 +35,7 @@
   [strain_energy]
     type = MaterialFromVariable
     property = pff_energy
-    variable = pff_energy
+    coupled_variable = pff_energy
   []
   [degradation]
     type = PFFDegradationFunction

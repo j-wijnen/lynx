@@ -2,6 +2,9 @@
 
 #include "IsotropicPlasticStress.h"
 
+namespace lynx 
+{
+
 /**
  * LinearElasticStress computes the linear elastic stress
  */
@@ -40,3 +43,5 @@ protected:
   const bool _energy_split;
   const bool _consistent_split;
 };
+
+} // end namespace

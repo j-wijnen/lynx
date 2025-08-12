@@ -39,9 +39,12 @@
   []
   [plasticity]
     type = IsotropicPlasticStress
+    hardening_material = hardening
+  []
+  [hardening]
+    type = PowerLawHardening
     initial_yield_stress = 200.0
-    hardening_law = powerlaw
-    hardening_modulus = 200e3
+    youngs_modulus = 200e3
     hardening_exponent = 0.1
   []
 []

@@ -58,13 +58,16 @@
   []
   [stress]
     type = WeldingPlasticStress
-    initial_yield_stress = 200.0
-    hardening_law = linear 
-    hardening_modulus = 10e3
+    hardening_material = yield_stress
     temperature_variable = temperature 
     annealing_temperature = 1400
     outputs = all
     output_properties = 'plastic_multiplier yield_stress'
+  []
+  [yield_stress]
+    type = LinearHardening
+    initial_yield_stress = 200.0
+    hardening_modulus = 10e3
   []
 []
 

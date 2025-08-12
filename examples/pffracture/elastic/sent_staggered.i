@@ -111,9 +111,17 @@
   petsc_options_value = ' lu       mumps'
   line_search = none
   nl_abs_tol = 1e-4
-  fixed_point_max_its = 1000
-  fixed_point_min_its = 1
-  fixed_point_abs_tol = 1e-2
+  multiapp_fixed_point_convergence = conv
+[]
+
+[Convergence]
+  [conv]
+    type = CustomMultiAppFixedPointConvergence
+    fixed_point_max_its = 1000
+    fixed_point_min_its = 1
+    accept_on_max_fixed_point_iteration = true
+    fixed_point_abs_tol = 1e-2
+  []
 []
 
 [MultiApps]
@@ -121,6 +129,7 @@
     type = TransientMultiApp
     input_files = 'sent_staggered_sub.i'
     execute_on = timestep_end
+
   []
 []
 

@@ -36,12 +36,19 @@
 []
 
 [Materials]
-  [plasticity]
-    type = IsotropicPlasticStress
+  [elasticity]
+    type = ComputeIsotropicElasticityTensor
     youngs_modulus = 200e3
     poissons_ratio = 0.3
-    yield_stress = 200
-    hardening_law = powerlaw
+  []
+  [plasticity]
+    type = IsotropicPlasticStress
+    hardening_material = hardening
+  []
+  [hardening]
+    type = PowerLawHardening
+    initial_yield_stress = 200
+    youngs_modulus = 200e3
     hardening_exponent = 0.1
   []
 []

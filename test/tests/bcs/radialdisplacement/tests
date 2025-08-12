@@ -4,6 +4,11 @@
     input = 'radialdisplacement.i'
     exodiff = 'radialdisplacement_out.e'
   []
+  [ADradialdisplacement]
+    type = 'Exodiff'
+    input = 'ADradialdisplacement.i'
+    exodiff = 'ADradialdisplacement_out.e'
+  []
   [fixedradialdisplacement]
     type = 'Exodiff'
     input = 'fixedradialdisplacement.i'
