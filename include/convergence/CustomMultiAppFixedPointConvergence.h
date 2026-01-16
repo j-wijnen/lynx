@@ -13,6 +13,11 @@
 
 #include "DefaultMultiAppFixedPointConvergence.h"
 
+// Libmesh/PETSc includes
+#include "libmesh/enum_norm_type.h"
+#include <petsc.h>
+#include <petscmat.h>
+
 namespace lynx {
 
 /**
@@ -28,10 +33,33 @@ public:
 
   CustomMultiAppFixedPointConvergence(const InputParameters & params);
 
+  ~CustomMultiAppFixedPointConvergence();
+
+
   /**
    * Implement custom convergence checking logic.
    */
   virtual MooseConvergenceStatus checkConvergence(unsigned int iter) override;
+
+protected:
+
+  /**
+   * Print the residual of the current fixed-point iteration to file
+   */
+  virtual void printFixedPointConvergenceToFile(unsigned int iter,
+                                                Real initial_norm,
+                                                const std::vector<Real> & timestep_begin_norms,
+                                                const std::vector<Real> & timestep_end_norms);
+
+  std::ofstream _file;
+
+  /**
+   * Reference vector implementation
+   */
+  bool _has_reference_vector;
+  TagID _reference_vector_tag_id;
+  const NumericVector<Number> * _reference_vector;
+  libMesh::FEMNormType _norm_type;
 };
 
 } // end namespace

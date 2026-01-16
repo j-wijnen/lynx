@@ -6,6 +6,8 @@
 #include "NoHardening.h"
 
 using ElasticityTensorTools::getIsotropicShearModulus;
+using lynx::MooseTensorUtils::IdentityFourSymDev;
+using lynx::MooseTensorUtils::IdentityTwoTwo;
 
 namespace lynx
 {
@@ -129,7 +131,7 @@ IsotropicPlasticStressOld::computeQpStress()
     _stress[_qp] = _elasticity_tensor[_qp] * _elastic_strain[_qp];
 
     _Jacobian_mult[_qp] += 6. * shear_modulus*shear_modulus * (
-      - dplastic_mult / stress_eq * IdentityFourDev
+      - dplastic_mult / stress_eq * IdentityFourSymDev
       + (dplastic_mult / stress_eq + 1. / computeReturnDerivative(dplastic_mult)) 
       * N.outerProduct(N));
   }

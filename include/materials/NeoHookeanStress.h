@@ -2,6 +2,9 @@
 
 #include "ComputeLagrangianStressPK1.h"
 
+namespace lynx
+{
+
 /**
  * NeoHookeanStress related to strain energy density function:
  * W = G/2 * (I1b - 3) + K * U
@@ -23,3 +26,5 @@ protected:
   // Elastic parameters
   const Real _shearmod, _bulkmod;
 };
+
+} // end namespace

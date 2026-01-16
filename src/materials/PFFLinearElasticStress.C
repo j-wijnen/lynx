@@ -4,6 +4,9 @@
 
 using ElasticityTensorTools::getIsotropicShearModulus;
 using ElasticityTensorTools::getIsotropicBulkModulus;
+using lynx::MooseTensorUtils::IdentityFourSymDev;
+using lynx::MooseTensorUtils::IdentityTwoTwo;
+using lynx::MooseTensorUtils::Identity;
 
 registerMooseObject("LynxApp", PFFLinearElasticStress);
 
@@ -92,7 +95,7 @@ PFFLinearElasticStress::computeQpStress()
 
   // Deviatoric part
   _stress[_qp] += 2.0 * g * shear_modulus * deviatoric_strain;
-  _Jacobian_mult[_qp] += 2.0 * g * shear_modulus * IdentityFourDev;
+  _Jacobian_mult[_qp] += 2.0 * g * shear_modulus * IdentityFourSymDev;
   
   // Energy
   _pff_energy[_qp] = shear_modulus * deviatoric_strain.doubleContraction(deviatoric_strain);

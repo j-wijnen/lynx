@@ -15,6 +15,8 @@
 
 using ElasticityTensorTools::getIsotropicShearModulus;
 using ElasticityTensorTools::getIsotropicBulkModulus;
+using lynx::MooseTensorUtils::IdentityFourSymDev;
+using lynx::MooseTensorUtils::IdentityTwoTwo;
 
 namespace lynx {
 
@@ -116,7 +118,7 @@ WeldingPlasticStress::computeQpStress()
     {
       dplastic_mult = (stress_tr - _yield_stress[_qp]) / (3. * shear_modulus);
       _Jacobian_mult[_qp] += 6. * shear_modulus*shear_modulus * (
-        - dplastic_mult / stress_tr * IdentityFourDev
+        - dplastic_mult / stress_tr * IdentityFourSymDev
         + (dplastic_mult / stress_tr - 1. / (3. * shear_modulus)) 
         * N.outerProduct(N));
 
@@ -132,7 +134,7 @@ WeldingPlasticStress::computeQpStress()
     {
       dplastic_mult = computeReturnMap(stress_tr);
       _Jacobian_mult[_qp] += 6. * shear_modulus*shear_modulus * (
-        - dplastic_mult / stress_tr * IdentityFourDev
+        - dplastic_mult / stress_tr * IdentityFourSymDev
         + (dplastic_mult / stress_tr + 1. / computeReturnDerivative(dplastic_mult)) 
         * N.outerProduct(N));
 
@@ -144,7 +146,7 @@ WeldingPlasticStress::computeQpStress()
   if (trip_flag)
   {
     _Jacobian_mult[_qp] -= 4. * shear_modulus*shear_modulus * trip_factor
-      / (1.0 + 2.0 * shear_modulus * trip_factor) * IdentityFourDev;
+      / (1.0 + 2.0 * shear_modulus * trip_factor) * IdentityFourSymDev;
   }
 
   // Update strains and stress

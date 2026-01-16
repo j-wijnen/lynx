@@ -1,14 +1,11 @@
 #include "IADNeoHookeanStress.h"
 #include "RankFourTensor.h"
 #include "RankTwoTensor.h"
-#include "FastorTensorUtils.h"
 #include "MooseTensorUtils.h"
 
-using Fastor::trace;
-using Fastor::det;
-using Fastor::inv;
-using Fastor::outer;
-using Fastor::trans;
+using lynx::MooseTensorUtils::initRankTwoTensorDerivatives;
+using lynx::MooseTensorUtils::getADRankTwoTensorValues;
+using lynx::MooseTensorUtils::getRankTwoRankTwoDerivative;
 
 registerMooseObject("LynxApp", IADNeoHookeanStress);
 

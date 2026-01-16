@@ -1,11 +1,7 @@
 #include "StVenantKirchhoffStress.h"
 #include "RankFourTensor.h"
 #include "RankTwoTensor.h"
-#include "FastorTensorUtils.h"
-
-using Fastor::trans;
-using Fastor::einsum;
-using Fastor::Index;
+#include "MooseTensorUtils.h"
 
 registerMooseObject("LynxApp", StVenantKirchhoffStress);
 
@@ -25,28 +21,22 @@ StVenantKirchhoffStress::StVenantKirchhoffStress(
   // Consumed properties
   _elasticity_tensor(getMaterialProperty<RankFourTensor>(_base_name + "elasticity_tensor"))
 {
-  mooseAssert(_large_kinematics, "large_kinematics needs to be set to true");
+  if (!_large_kinematics)
+    mooseError("large_kinematics needs to be set to true");
 }
 
-void StVenantKirchhoffStress::computeQpPK1Stress()
+void 
+StVenantKirchhoffStress::computeQpPK1Stress()
 {
-  FTensor2 F = convertRankTwoTensor<FTensor2,RankTwoTensor>(_F[_qp]);
-  FTensor4 C4 = convertRankFourTensor<FTensor4,RankFourTensor>(_elasticity_tensor[_qp]);
-
   // Compute the stress
-  FTensor2 E = 0.5 * (trans(F) % F - I2);
-  FTensor2 S = einsum<Index<1,2,3,4>,Index<4,3>>(C4, E);
+  RankTwoTensor E = 0.5 * (_F[_qp].transpose() * _F[_qp] - Identity);
+  RankTwoTensor S = _elasticity_tensor[_qp] * E;
 
   // Push forward to PK1 stress
-  FTensor2 P = F % S;
+  _pk1_stress[_qp] = _F[_qp] * S;
 
-  // Push forward Jacobian
-  // J = I4RT : (S . I4) +  F . C4 :(F^T . I4RT)
-  FTensor4 J4 = einsum<Index<1,2,3,4>,Index<4,5>,Index<5,3,6,7>>(
-      I4RT, S, I4)
-    + einsum<Index<1,2>,Index<2,3,4,5>,Index<6,5>,Index<6,4,7,8>>(
-      F, C4, F, I4RT);
-
-  _pk1_stress[_qp] = convertRankTwoTensor<RankTwoTensor,FTensor2>(P);
-  _pk1_jacobian[_qp] = convertRankFourTensor<RankFourTensor,FTensor4>(J4);
+  // Jacobian
+  enum {i_,j_,k_,l_,m_};
+  RankFourTensor dE_dF = 0.5 * (outerIdentity<k_,i_,j_,l_>(_F[_qp]) + outerIdentity<k_,j_,i_,l_>(_F[_qp]));
+  _pk1_jacobian[_qp] = outerIdentity<l_,j_,i_,k_>(S) + dot(_F[_qp], _elasticity_tensor[_qp]) * dE_dF;
 }

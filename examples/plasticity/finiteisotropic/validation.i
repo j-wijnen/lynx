@@ -8,8 +8,8 @@
   [generated]
     type = GeneratedMeshGenerator
     dim = 2
-    nx = 1
-    ny = 1
+    nx = 5
+    ny = 5
     xmax = 1
     ymax = 1
   []
@@ -47,9 +47,16 @@
     youngs_modulus = 210e3
     poissons_ratio = 0.3
   []
+  #[./elasticity_tensor]
+  #  type = ComputeElasticityTensor
+  #  C_ijkl = '1.684e5 0.176e5 0.2e5 1.153e5 0.1e5 1.3512e5 0.7e5 0.9e5 0.4e5'
+  #  fill_method = symmetric9
+  #[../]
   [stress]
-    type = StVenantKirchhoffStress
+    type = IADIsotropicCrystalPlasticityStress
     large_kinematics = true
+    rate_sensitivity = 0.05
+    lamdot0 = 0.01
   []
 []
 
@@ -63,14 +70,14 @@
     [lefty]
         type = DirichletBC
         variable = disp_y
-        boundary = left
+        boundary = leftbottom
         value = 0.
     []
     [right]
         type = FunctionDirichletBC
         variable = disp_x
         boundary = right
-        function = 't'
+        function = '0.01*t'
     []
 []
 

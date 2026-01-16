@@ -3,6 +3,10 @@
 #include "RankTwoTensor.h"
 #include "MooseTensorUtils.h"
 
+using lynx::MooseTensorUtils::initRankTwoTensorDerivatives;
+using lynx::MooseTensorUtils::getADRankTwoTensorValues;
+using lynx::MooseTensorUtils::getRankTwoRankTwoDerivative;
+
 registerMooseObject("LynxApp", IADHenckyStress);
 
 InputParameters

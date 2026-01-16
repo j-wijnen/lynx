@@ -2,12 +2,26 @@
 #include "RankFourTensor.h"
 #include "RankTwoTensor.h"
 #include "FastorTensorUtils.h"
+#include "MooseTensorUtils.h"
 
 using Fastor::trace;
 using Fastor::det;
 using Fastor::inv;
 using Fastor::outer;
 using Fastor::trans;
+using lynx::FastorTensorUtils::FTensor2;
+using lynx::FastorTensorUtils::FTensor4;
+using lynx::FastorTensorUtils::I2;
+using lynx::FastorTensorUtils::I2I2;
+using lynx::FastorTensorUtils::I4;
+using lynx::FastorTensorUtils::I4RT;
+using lynx::FastorTensorUtils::I4S;
+using lynx::FastorTensorUtils::convertRankTwoTensor;
+using lynx::FastorTensorUtils::convertRankFourTensor;
+using lynx::FastorTensorUtils::dAinvTdA;
+
+namespace lynx 
+{
 
 registerMooseObject("LynxApp", NeoHookeanStress);
 
@@ -38,10 +52,8 @@ NeoHookeanStress::NeoHookeanStress(
 
 void NeoHookeanStress::computeQpPK1Stress()
 {
-  FTensor2 F = convertRankTwoTensor<FTensor2,RankTwoTensor>(_F[_qp]);
-
   // Invariants
-  Real J = det(F);
+  Real J = _F[_qp].det()
   Real Jinv23 = 1.0 / std::pow(J, 2.0/3.0);
   Real I1 = trace(trans(F) % F);
   Real I1b = Jinv23 * I1;
@@ -73,3 +85,5 @@ void NeoHookeanStress::computeQpPK1Stress()
   _pk1_stress[_qp] = convertRankTwoTensor<RankTwoTensor,FTensor2>(P);
   _pk1_jacobian[_qp] = convertRankFourTensor<RankFourTensor,FTensor4>(J4);
 }
+
+} // end namespace

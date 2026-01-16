@@ -4,6 +4,9 @@
 
 using ElasticityTensorTools::getIsotropicShearModulus;
 using ElasticityTensorTools::getIsotropicBulkModulus;
+using lynx::MooseTensorUtils::Identity;
+using lynx::MooseTensorUtils::IdentityFourSymDev;
+using lynx::MooseTensorUtils::IdentityTwoTwo;
 
 namespace lynx 
 {
@@ -99,7 +102,7 @@ PFFIsotropicPlasticStress::computeQpStress()
   RankTwoTensor stress_dev = 2. * g * shear_modulus * elastic_strain_dev;
   Real stress_eq = _sqrt32 * std::sqrt(stress_dev.doubleContraction(stress_dev));
 
-  _Jacobian_mult[_qp] += 2.0 * g * shear_modulus * IdentityFourDev;
+  _Jacobian_mult[_qp] += 2.0 * g * shear_modulus * IdentityFourSymDev;
 
   // Check for yielding
   _yield_stress[_qp] = _hardening_law->getYieldStress(_plastic_multiplier_old[_qp]);
@@ -120,7 +123,7 @@ PFFIsotropicPlasticStress::computeQpStress()
     stress_dev = 2. * g * shear_modulus * elastic_strain_dev;
 
     _Jacobian_mult[_qp] += 6. * g*g * shear_modulus*shear_modulus * (
-      - dplastic_mult / stress_eq * IdentityFourDev
+      - dplastic_mult / stress_eq * IdentityFourSymDev
       + (dplastic_mult / stress_eq + 1. / computeReturnDerivative(dplastic_mult)) 
       * N.outerProduct(N));
 

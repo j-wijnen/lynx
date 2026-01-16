@@ -1,3 +1,14 @@
+//* This file is part of Lynx, 
+//* an open-source application for the simulation  
+//* of mechanics and multi-physics problems
+//* https://github.com/j-wijnen/lynx
+//*
+//* Lynx is powered by the MOOSE Framework
+//* https://www.mooseframework.org
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
 #include "IsotropicPlasticStress.h"
 #include "ElasticityTensorTools.h"
 #include "MooseEnum.h"
@@ -7,6 +18,8 @@
 
 using ElasticityTensorTools::getIsotropicShearModulus;
 using MetaPhysicL::raw_value;
+using lynx::MooseTensorUtils::IdentityFourSymDev;
+using lynx::MooseTensorUtils::IdentityTwoTwo;
 
 namespace lynx
 {
@@ -135,7 +148,7 @@ IsotropicPlasticStressTempl<is_ad>::computeQpStress()
     _stress[_qp] = _elasticity_tensor[_qp] * _elastic_strain[_qp];
 
     jacobian += 6. * shear_modulus*shear_modulus * (
-      - dplastic_mult / stress_eq * IdentityFourDev
+      - dplastic_mult / stress_eq * IdentityFourSymDev
       + (dplastic_mult / stress_eq + 1. / computeReturnDerivative(dplastic_mult)) 
       * N.outerProduct(N));
   }
